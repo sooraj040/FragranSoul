@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Sign in — FraagranSoul{% endblock %}
+{% block content %}
+<section class="auth">
+    <div class="auth-card">
+        <p class="kicker">Welcome back</p>
+        <h1>Sign in</h1>
+
+        <form method="post" class="stack-form">
+            {% csrf_token %}
+            <label>Email
+                <input type="text" name="email" autocomplete="username" autofocus required>
+            </label>
+            <label>Password
+                <input type="password" name="password" autocomplete="current-password" required>
+            </label>
+            <button class="btn dark wide" type="submit">Sign in</button>
+        </form>
+
+        <p class="form-foot">New to FraagranSoul? <a href="{% url 'store:register' %}">Create an account</a></p>
+    </div>
+</section>
+{% endblock %}

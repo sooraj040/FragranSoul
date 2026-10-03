@@ -1,0 +1,53 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Families{% endblock %}
+{% block heading %}Fragrance families{% endblock %}
+
+{% block content %}
+<div class="split wide-left">
+    <section class="card">
+        <div class="card-head"><h2>All families</h2></div>
+
+        {% if categories %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Family</th><th class="num">Perfumes</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                            <tr>
+                                <td class="strong">{{ category.name|title }}</td>
+                                <td class="num">{{ category.product_count }}</td>
+                                <td class="num">
+                                    {% if category.product_count %}
+                                        <span class="muted">In use</span>
+                                    {% else %}
+                                        <form method="post" action="{% url 'store:dashboard_category_delete' category.pk %}">
+                                            {% csrf_token %}
+                                            <button class="row-link danger-link" type="submit">Delete</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="blank">No families yet. Add one such as Woody, Floral, Amber or Musk.</p>
+        {% endif %}
+    </section>
+
+    <section class="card">
+        <div class="card-head"><h2>Add a family</h2></div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="fields">
+                <label class="full">Name {{ form.name }}{{ form.name.errors }}</label>
+            </div>
+            <button class="btn dark wide" type="submit">Add family</button>
+        </form>
+        <p class="hint">Families group perfumes in the store's menu and filters. Only an empty family can be deleted.</p>
+    </section>
+</div>
+{% endblock %}

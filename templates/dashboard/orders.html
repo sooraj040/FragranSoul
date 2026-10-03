@@ -1,0 +1,67 @@
+{% extends 'dashboard/base.html' %}
+{% load store_extras %}
+{% block title %}Orders{% endblock %}
+{% block heading %}Orders{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <!-- Status tabs keep the current search. -->
+    <div class="tabs">
+        <a href="?q={{ q|urlencode }}" class="{% if not status %}active{% endif %}">All</a>
+        {% for value, label in status_choices %}
+            <a href="?status={{ value }}&q={{ q|urlencode }}" class="{% if status == value %}active{% endif %}">{{ label }}</a>
+        {% endfor %}
+    </div>
+
+    <form method="get" class="search">
+        <input type="hidden" name="status" value="{{ status }}">
+        <input type="search" name="q" value="{{ q }}" placeholder="Order number, name, email or phone" aria-label="Search orders">
+        <button class="btn" type="submit">Search</button>
+    </form>
+</div>
+
+<section class="card">
+    {% if page.object_list %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order</th><th>Customer</th><th>Items</th><th>Status</th><th class="num">Total</th><th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in page.object_list %}
+                        <tr>
+                            <td>
+                                <a class="strong" href="{% url 'store:dashboard_order' order.order_number %}">{{ order.order_number }}</a>
+                                <small>{{ order.created_at|date:"j M Y, g:i a" }}</small>
+                            </td>
+                            <td>{{ order.full_name }}<small>{{ order.phone }} · {{ order.city }}</small></td>
+                            <td>{{ order.item_count }} bottle{{ order.item_count|pluralize }}</td>
+                            <td><span class="status status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                            <td class="num">{{ order.total|rupees }}</td>
+                            <td class="num"><a class="row-link" href="{% url 'store:dashboard_order' order.order_number %}">Open</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page.has_other_pages %}
+            <div class="pager">
+                {% if page.has_previous %}
+                    <a href="?page={{ page.previous_page_number }}&status={{ status }}&q={{ q|urlencode }}">Newer</a>
+                {% endif %}
+                <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+                {% if page.has_next %}
+                    <a href="?page={{ page.next_page_number }}&status={{ status }}&q={{ q|urlencode }}">Older</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <p class="blank">
+            {% if status or q %}No orders match this filter.{% else %}No orders yet. They will appear here as soon as a customer checks out.{% endif %}
+        </p>
+    {% endif %}
+</section>
+{% endblock %}

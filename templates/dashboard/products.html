@@ -1,0 +1,59 @@
+{% extends 'dashboard/base.html' %}
+{% load store_extras %}
+{% block title %}Perfumes{% endblock %}
+{% block heading %}Perfumes{% endblock %}
+{% block actions %}<a class="btn dark" href="{% url 'store:dashboard_product_add' %}">Add perfume</a>{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <form method="get" class="search">
+        <input type="search" name="q" value="{{ q }}" placeholder="Search by name, brand or family" aria-label="Search perfumes">
+        <button class="btn" type="submit">Search</button>
+    </form>
+</div>
+
+<section class="card">
+    {% if products %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Perfume</th><th>For</th><th>Family</th><th>Sizes, price and stock</th><th>Shown as</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                        <tr>
+                            <td>
+                                <a class="product-cell" href="{% url 'store:dashboard_product_edit' product.pk %}">
+                                    <span class="thumb">{% if product.image %}<img src="{{ product.image.url }}" alt="">{% else %}FS{% endif %}</span>
+                                    <span class="strong">{{ product.name }}<small>{{ product.brand }}</small></span>
+                                </a>
+                            </td>
+                            <td>{{ product.get_gender_display }}</td>
+                            <td>{{ product.category.name|title }}</td>
+                            <td>
+                                {% for variant in product.variants.all %}
+                                    <span class="size-tag {% if variant.stock == 0 %}out{% endif %}">
+                                        {{ variant.volume_ml }} ml · {{ variant.price|rupees }} ·
+                                        {% if variant.stock == 0 %}sold out{% else %}{{ variant.stock }} in stock{% endif %}
+                                    </span>
+                                {% empty %}
+                                    <span class="muted">No sizes yet — not visible in the store</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if product.is_featured %}<span class="flag">Featured</span>{% endif %}
+                                {% if product.is_new %}<span class="flag">New</span>{% endif %}
+                            </td>
+                            <td class="num"><a class="row-link" href="{% url 'store:dashboard_product_edit' product.pk %}">Edit</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="blank">
+            {% if q %}No perfumes match “{{ q }}”.{% else %}No perfumes yet. Add the first one to open the store.{% endif %}
+        </p>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load store_extras %}
+{% block title %}{{ product.name }} — FraagranSoul{% endblock %}
+{% block content %}
+<div class="container">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="{% url 'store:home' %}">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="{% url 'store:shop' %}?gender={{ product.gender }}">{{ product.get_gender_display }}</a>
+        <span aria-hidden="true">/</span>
+        <a href="{% url 'store:shop' %}?category={{ product.category.slug }}">{{ product.category.name|title }}</a>
+    </nav>
+
+    <!-- Product detail page: one perfume can contain many bottle-size variants. -->
+    <section class="detail">
+        <div class="detail-visual tone-{{ product.gender }}">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+                <div class="bottle-art bottle-large">
+                    <i class="bottle-cap"></i>
+                    <i class="bottle-neck"></i>
+                    <div class="bottle-body"><span>FraagranSoul<small>{{ product.name }}</small></span></div>
+                </div>
+            {% endif %}
+            {% if product.is_new %}<span class="badges"><span class="badge">New</span></span>{% endif %}
+        </div>
+
+        <div class="detail-copy">
+            <p class="kicker">{{ product.brand }} · {{ product.get_gender_display }}</p>
+            <h1>{{ product.name }}</h1>
+
+            <!-- JavaScript updates this price whenever the customer changes the bottle size. -->
+            <div class="detail-price" id="selected-price" aria-live="polite">
+                {% if default_variant %}
+                    <span>{{ default_variant.price|rupees }}</span>
+                    {% if default_variant.has_discount %}
+                        <del>{{ default_variant.old_price|rupees }}</del>
+                        <em>Save {{ default_variant.discount_percent }}%</em>
+                    {% endif %}
+                {% else %}
+                    <span class="sold-out">Currently unavailable</span>
+                {% endif %}
+            </div>
+
+            <p class="detail-desc">{{ product.description|linebreaksbr }}</p>
+
+            {% if product.notes %}
+                <div class="notes-box">
+                    <span class="kicker">Notes</span>
+                    <p>{{ product.notes }}</p>
+                </div>
+            {% endif %}
+
+            <!-- The selected variant ID is part of the form URL, so the right size, price and stock are used. -->
+            <form method="post" id="add-to-cart-form"
+                  action="{% if default_variant %}{% url 'store:add_to_cart' default_variant.id %}{% endif %}"
+                  data-url-template="{% url 'store:add_to_cart' 0 %}">
+                {% csrf_token %}
+
+                <div class="size-section">
+                    <div class="size-heading">
+                        <span class="kicker">Choose your size</span>
+                        <span id="selected-size-label">{% if default_variant %}{{ default_variant.volume_ml }} ml{% endif %}</span>
+                    </div>
+
+                    <!-- Every bottle size entered in the dashboard is shown as a selectable option. -->
+                    <div class="size-options" role="group" aria-label="Bottle size">
+                        {% for variant in variants %}
+                            <button
+                                type="button"
+                                class="size-option {% if variant == default_variant %}selected{% endif %}"
+                                aria-pressed="{% if variant == default_variant %}true{% else %}false{% endif %}"
+                                data-variant-id="{{ variant.id }}"
+                                data-volume="{{ variant.volume_ml }}"
+                                data-price="{{ variant.price|floatformat:2 }}"
+                                {% if variant.has_discount %}data-old-price="{{ variant.old_price|floatformat:2 }}" data-discount="{{ variant.discount_percent }}"{% endif %}
+                                data-stock="{{ variant.stock }}"
+                                {% if not variant.in_stock %}disabled{% endif %}
+                            >
+                                <strong>{{ variant.volume_ml }} ml</strong>
+                                <small>{% if variant.in_stock %}{{ variant.price|rupees }}{% else %}Out of stock{% endif %}</small>
+                            </button>
+                        {% empty %}
+                            <p class="no-sizes">Bottle sizes for this perfume have not been added yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="buy-row">
+                    <div class="stepper" data-stepper>
+                        <button type="button" data-step="-1" aria-label="Decrease quantity">−</button>
+                        <input type="number" name="quantity" id="quantity" value="1" min="1"
+                               max="{{ default_variant.stock|default:1 }}" aria-label="Quantity">
+                        <button type="button" data-step="1" aria-label="Increase quantity">+</button>
+                    </div>
+                    <button class="btn dark" type="submit" id="add-to-cart-button" {% if not default_variant %}disabled{% endif %}>
+                        {% if default_variant %}Add to bag{% else %}Sold out{% endif %}
+                    </button>
+                </div>
+            </form>
+
+            <p class="stock" id="stock-message" aria-live="polite">
+                {% if default_variant %}
+                    {% if default_variant.stock <= 3 %}Only {{ default_variant.stock }} left{% else %}In stock{% endif %}
+                {% endif %}
+            </p>
+
+            <ul class="detail-points">
+                <li>Complimentary shipping over {{ free_shipping_threshold|rupees }}</li>
+                <li>Cash on delivery</li>
+            </ul>
+        </div>
+    </section>
+</div>
+
+<!-- Related perfumes remain within the same fragrance-family category. -->
+{% if related %}
+    <section class="section">
+        <div class="container">
+            <div class="section-head">
+                <div>
+                    <p class="kicker">You may also like</p>
+                    <h2>More from {{ product.category.name|title }}</h2>
+                </div>
+            </div>
+
+            <div class="product-grid">
+                {% for p in related %}
+                    {% include 'store/product_card.html' with product=p %}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endif %}
+{% endblock %}

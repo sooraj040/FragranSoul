@@ -1,0 +1,41 @@
+{% load store_extras %}
+<!-- Reusable perfume card used on the home page and collection page. -->
+<article class="product-card" data-reveal>
+    <a href="{{ product.get_absolute_url }}" class="product-visual tone-{{ product.gender }}" tabindex="-1" aria-hidden="true">
+        {% if product.image %}
+            <img src="{{ product.image.url }}" alt="" loading="lazy">
+        {% else %}
+            <div class="bottle-art">
+                <i class="bottle-cap"></i>
+                <i class="bottle-neck"></i>
+                <div class="bottle-body"><span>FS</span></div>
+            </div>
+        {% endif %}
+
+        <span class="badges">
+            {% if product.is_new %}<span class="badge">New</span>{% endif %}
+            {% if product.on_offer %}<span class="badge badge-gold">Offer</span>{% endif %}
+        </span>
+
+        <!-- Customers select the bottle size on the product page before adding to bag. -->
+        <span class="card-cta">Choose size</span>
+    </a>
+
+    <div class="product-meta">
+        <p class="product-brand">{{ product.get_gender_display }} · {{ product.category.name }}</p>
+        <h3><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></h3>
+        {% if product.notes %}<p class="notes">{{ product.notes }}</p>{% endif %}
+
+        <!-- The card shows the cheapest available bottle size. -->
+        <div class="card-foot">
+            <span class="price">
+                {% if product.starting_price %}
+                    From {{ product.starting_price|rupees }}
+                {% else %}
+                    Currently unavailable
+                {% endif %}
+            </span>
+            <span class="sizes">{% for v in product.available_variants %}{{ v.volume_ml }} ml{% if not forloop.last %} · {% endif %}{% endfor %}</span>
+        </div>
+    </div>
+</article>

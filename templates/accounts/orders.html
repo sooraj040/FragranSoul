@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load store_extras %}
+{% block title %}Your Orders — FraagranSoul{% endblock %}
+{% block content %}
+<section class="page-head">
+    <div class="container">
+        <p class="kicker">Your account</p>
+        <h1>Your orders</h1>
+    </div>
+</section>
+
+<div class="container">
+    <div class="orders-list">
+        {% for order in orders %}
+            <a class="order-row" href="{{ order.get_absolute_url }}">
+                <div>
+                    <p class="order-meta">
+                        <span class="status status-{{ order.status }}">{{ order.get_status_display }}</span>
+                        {{ order.created_at|date:"j F Y" }}
+                    </p>
+                    <h3>{{ order.order_number }}</h3>
+                    <p>{% for item in order.items.all %}{{ item.product_name }} {{ item.volume_ml }} ml × {{ item.quantity }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+                </div>
+                <div class="order-row-end">
+                    <strong>{{ order.total|rupees }}</strong>
+                    <span class="text-link">View order</span>
+                </div>
+            </a>
+        {% empty %}
+            <div class="empty">
+                <div class="empty-mark" aria-hidden="true">FS</div>
+                <h3>No orders yet.</h3>
+                <p>Orders you place while signed in will appear here.</p>
+                <a class="btn dark" href="{% url 'store:shop' %}">Shop perfumes</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

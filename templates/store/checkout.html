@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load store_extras %}
+{% block title %}Checkout — FraagranSoul{% endblock %}
+{% block content %}
+<section class="page-head">
+    <div class="container">
+        <p class="kicker">Checkout</p>
+        <h1>Complete your order</h1>
+    </div>
+</section>
+
+<div class="container">
+    <form method="post" class="checkout-layout">
+        {% csrf_token %}
+
+        <div class="panel">
+            <h2>Delivery details</h2>
+
+            <div class="form-grid">
+                <label>Full name
+                    <input name="full_name" value="{{ form.full_name.value|default_if_none:'' }}" autocomplete="name" required>
+                    {{ form.full_name.errors }}
+                </label>
+                <label>Email
+                    <input type="email" name="email" value="{{ form.email.value|default_if_none:'' }}" autocomplete="email" required>
+                    {{ form.email.errors }}
+                </label>
+                <label class="full">Mobile number
+                    <input type="tel" name="phone" value="{{ form.phone.value|default_if_none:'' }}" autocomplete="tel" placeholder="10-digit mobile number" required>
+                    {{ form.phone.errors }}
+                </label>
+                <label class="full">Delivery address
+                    <textarea name="address" rows="3" autocomplete="street-address" required>{{ form.address.value|default_if_none:'' }}</textarea>
+                    {{ form.address.errors }}
+                </label>
+                <label>City
+                    <input name="city" value="{{ form.city.value|default_if_none:'' }}" autocomplete="address-level2" required>
+                    {{ form.city.errors }}
+                </label>
+                <label>PIN code
+                    <input name="pin_code" value="{{ form.pin_code.value|default_if_none:'' }}" inputmode="numeric" maxlength="6" autocomplete="postal-code" required>
+                    {{ form.pin_code.errors }}
+                </label>
+            </div>
+
+            <h2>Payment</h2>
+            <div class="pay-option">
+                <strong>Cash on delivery</strong>
+                <span>Pay when your order arrives. No online payment is taken.</span>
+            </div>
+        </div>
+
+        <!-- Order summary: built from the same bag the order will be created from. -->
+        <aside class="summary">
+            <h2>Order summary</h2>
+            <ul class="summary-items">
+                {% for item in items %}
+                    <li>
+                        <span>{{ item.variant.product.name }}<small>{{ item.variant.volume_ml }} ml × {{ item.qty }}</small></span>
+                        <span>{{ item.subtotal|rupees }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            <dl>
+                <div><dt>Subtotal</dt><dd>{{ subtotal|rupees }}</dd></div>
+                <div><dt>Shipping</dt><dd>{% if shipping %}{{ shipping|rupees }}{% else %}Complimentary{% endif %}</dd></div>
+                <div class="summary-total"><dt>Total</dt><dd>{{ total|rupees }}</dd></div>
+            </dl>
+            <button class="btn dark wide" type="submit">Place order</button>
+            <a class="text-link" href="{% url 'store:cart' %}">Edit bag</a>
+        </aside>
+    </form>
+</div>
+{% endblock %}

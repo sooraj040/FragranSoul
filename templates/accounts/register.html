@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Create Account — FraagranSoul{% endblock %}
+{% block content %}
+<section class="auth">
+    <div class="auth-card">
+        <p class="kicker">FraagranSoul account</p>
+        <h1>Create account</h1>
+
+        <form method="post" class="stack-form">
+            {% csrf_token %}
+            <div class="form-grid">
+                <label>First name
+                    <input name="first_name" value="{{ values.first_name }}" autocomplete="given-name" required>
+                </label>
+                <label>Last name
+                    <input name="last_name" value="{{ values.last_name }}" autocomplete="family-name" required>
+                </label>
+            </div>
+            <label>Email
+                <input type="email" name="email" value="{{ values.email }}" autocomplete="email" required>
+            </label>
+            <label>Password
+                <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+                <small>At least 8 characters, and not only numbers.</small>
+            </label>
+            <label>Confirm password
+                <input type="password" name="confirm_password" autocomplete="new-password" required>
+            </label>
+            <button class="btn dark wide" type="submit">Create account</button>
+        </form>
+
+        <p class="form-foot">Already have an account? <a href="{% url 'store:login' %}">Sign in</a></p>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}{% if gender_label %}{{ gender_label }} Perfumes{% else %}All Perfumes{% endif %} — FraagranSoul{% endblock %}
+{% block content %}
+<section class="page-head">
+    <div class="container">
+        <p class="kicker">The collection</p>
+        <h1>{% if gender == 'men' %}For men{% elif gender == 'women' %}For women{% elif gender == 'unisex' %}Unisex{% else %}All perfumes{% endif %}</h1>
+        <p class="lead">Explore the FraagranSoul fragrance collection.</p>
+    </div>
+</section>
+
+<div class="container">
+    <!-- Collection tabs. Each keeps the current search, family and sorting. -->
+    <nav class="tabs" aria-label="Collections">
+        <a href="?q={{ q|urlencode }}&category={{ selected_category }}&sort={{ sort }}"
+           class="{% if not gender %}active{% endif %}">All</a>
+        {% for value, label in collections %}
+            <a href="?gender={{ value }}&q={{ q|urlencode }}&category={{ selected_category }}&sort={{ sort }}"
+               class="{% if gender == value %}active{% endif %}">{{ label }}</a>
+        {% endfor %}
+    </nav>
+
+    <!-- Search, fragrance-family filter and sorting. -->
+    <form method="get" class="filter-bar">
+        <input type="hidden" name="gender" value="{{ gender }}">
+
+        <label class="field-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" name="q" value="{{ q }}" placeholder="Search by perfume or note" aria-label="Search perfumes">
+        </label>
+
+        <select name="category" aria-label="Filter by fragrance family" data-autosubmit>
+            <option value="">All families</option>
+            {% for c in categories %}
+                <option value="{{ c.slug }}" {% if selected_category == c.slug %}selected{% endif %}>{{ c.name|title }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="sort" aria-label="Sort perfumes" data-autosubmit>
+            {% for key, label in sort_options %}
+                <option value="{{ key }}" {% if sort == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <button class="btn dark" type="submit">Apply</button>
+    </form>
+
+    <div class="result-bar">
+        <span>{{ products|length }} perfume{{ products|length|pluralize }}{% if q %} for “{{ q }}”{% endif %}</span>
+        {% if is_filtered %}
+            <a class="text-link" href="{% url 'store:shop' %}{% if gender %}?gender={{ gender }}{% endif %}">Clear filters</a>
+        {% endif %}
+    </div>
+
+    <div class="product-grid shop-grid">
+        {% for p in products %}
+            {% include 'store/product_card.html' with product=p %}
+        {% empty %}
+            <div class="empty">
+                <div class="empty-mark" aria-hidden="true">FS</div>
+                {% if is_filtered %}
+                    <h3>No perfumes match your search.</h3>
+                    <p>Try a different note or fragrance family.</p>
+                    <a class="btn dark" href="{% url 'store:shop' %}{% if gender %}?gender={{ gender }}{% endif %}">Clear filters</a>
+                {% elif gender %}
+                    <h3>Nothing in this collection yet.</h3>
+                    <p>New perfumes are on their way.</p>
+                    <a class="btn dark" href="{% url 'store:shop' %}">View all perfumes</a>
+                {% else %}
+                    <h3>The collection is being composed.</h3>
+                    <p>Our first perfumes will be here shortly.</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load store_extras %}
+{% block title %}Your Bag — FraagranSoul{% endblock %}
+{% block content %}
+<section class="page-head">
+    <div class="container">
+        <p class="kicker">Your selection</p>
+        <h1>Your bag</h1>
+    </div>
+</section>
+
+<div class="container">
+    {% if items %}
+        <div class="cart-layout">
+            <div class="cart-items">
+                {% for item in items %}
+                    <article class="cart-item">
+                        <a class="cart-visual tone-{{ item.variant.product.gender }}" href="{{ item.variant.product.get_absolute_url }}" tabindex="-1" aria-hidden="true">
+                            {% if item.variant.product.image %}
+                                <img src="{{ item.variant.product.image.url }}" alt="">
+                            {% else %}
+                                <div class="bottle-art bottle-small">
+                                    <i class="bottle-cap"></i>
+                                    <i class="bottle-neck"></i>
+                                    <div class="bottle-body"></div>
+                                </div>
+                            {% endif %}
+                        </a>
+
+                        <div class="cart-info">
+                            <h3><a href="{{ item.variant.product.get_absolute_url }}">{{ item.variant.product.name }}</a></h3>
+                            <p>{{ item.variant.volume_ml }} ml · {{ item.variant.price|rupees }} each</p>
+
+                            <div class="cart-actions">
+                                <!-- Changing the quantity submits this form; "Update" is the fallback without JavaScript. -->
+                                <form method="post" action="{% url 'store:update_cart' item.variant.id %}" class="qty-form">
+                                    {% csrf_token %}
+                                    <div class="stepper" data-stepper data-autosubmit>
+                                        <button type="button" data-step="-1" aria-label="Decrease quantity">−</button>
+                                        <input type="number" name="quantity" value="{{ item.qty }}" min="0" max="{{ item.variant.stock }}" aria-label="Quantity">
+                                        <button type="button" data-step="1" aria-label="Increase quantity">+</button>
+                                    </div>
+                                    <button type="submit" class="link-button js-hide">Update</button>
+                                </form>
+
+                                <form method="post" action="{% url 'store:remove_from_cart' item.variant.id %}">
+                                    {% csrf_token %}
+                                    <button class="link-button remove" type="submit">Remove</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <strong class="cart-line-total">{{ item.subtotal|rupees }}</strong>
+                    </article>
+                {% endfor %}
+
+                <a class="text-link" href="{% url 'store:shop' %}">Continue shopping</a>
+            </div>
+
+            <aside class="summary">
+                <h2>Order summary</h2>
+                <dl>
+                    <div><dt>Subtotal</dt><dd>{{ subtotal|rupees }}</dd></div>
+                    <div><dt>Shipping</dt><dd>{% if shipping %}{{ shipping|rupees }}{% else %}Complimentary{% endif %}</dd></div>
+                    <div class="summary-total"><dt>Total</dt><dd>{{ total|rupees }}</dd></div>
+                </dl>
+                <a class="btn dark wide" href="{% url 'store:checkout' %}">Continue to checkout</a>
+                <p class="fine-print">Cash on delivery. You pay when your order arrives.</p>
+            </aside>
+        </div>
+    {% else %}
+        <div class="empty">
+            <div class="empty-mark" aria-hidden="true">FS</div>
+            <h3>Your bag is empty.</h3>
+            <p>Start with a fragrance that fits your mood.</p>
+            <a class="btn dark" href="{% url 'store:shop' %}">Shop perfumes</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

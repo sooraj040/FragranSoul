@@ -1,0 +1,12 @@
+<!-- One bottle size in the perfume form. `f` is a form from the variant formset. -->
+<tr>
+    <td>{{ f.id }}{{ f.volume_ml }}{{ f.volume_ml.errors }}</td>
+    <td>{{ f.price }}{{ f.price.errors }}</td>
+    <td>{{ f.old_price }}{{ f.old_price.errors }}</td>
+    <td>{{ f.stock }}{{ f.stock.errors }}{{ f.non_field_errors }}</td>
+    <td class="num">
+        {% if f.instance.pk %}
+            <label class="check">{{ f.DELETE }} Remove</label>
+        {% endif %}
+    </td>
+</tr>

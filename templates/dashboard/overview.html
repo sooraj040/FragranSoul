@@ -1,0 +1,88 @@
+{% extends 'dashboard/base.html' %}
+{% load store_extras %}
+{% block title %}Overview{% endblock %}
+{% block heading %}Overview{% endblock %}
+{% block actions %}<a class="btn dark" href="{% url 'store:dashboard_product_add' %}">Add perfume</a>{% endblock %}
+
+{% block content %}
+<div class="stats">
+    <a class="stat" href="{% url 'store:dashboard_orders' %}?status=pending">
+        <span>Awaiting confirmation</span>
+        <strong>{{ orders_pending }}</strong>
+        <small>Pending order{{ orders_pending|pluralize }}</small>
+    </a>
+    <a class="stat" href="{% url 'store:dashboard_orders' %}">
+        <span>Orders</span>
+        <strong>{{ orders_total }}</strong>
+        <small>{{ orders_today }} placed today</small>
+    </a>
+    <div class="stat">
+        <span>Order value</span>
+        <strong>{{ order_value|rupees }}</strong>
+        <small>Excludes cancelled orders</small>
+    </div>
+    <a class="stat" href="{% url 'store:dashboard_products' %}">
+        <span>Perfumes</span>
+        <strong>{{ perfume_count }}</strong>
+        <small>In the collection</small>
+    </a>
+</div>
+
+<div class="split">
+    <section class="card">
+        <div class="card-head">
+            <h2>Recent orders</h2>
+            <a href="{% url 'store:dashboard_orders' %}">View all</a>
+        </div>
+
+        {% if recent_orders %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Order</th><th>Customer</th><th>Status</th><th class="num">Total</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                            <tr>
+                                <td>
+                                    <a class="strong" href="{% url 'store:dashboard_order' order.order_number %}">{{ order.order_number }}</a>
+                                    <small>{{ order.created_at|date:"j M, g:i a" }}</small>
+                                </td>
+                                <td>{{ order.full_name }}<small>{{ order.city }}</small></td>
+                                <td><span class="status status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                                <td class="num">{{ order.total|rupees }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="blank">No orders yet. They will appear here as soon as a customer checks out.</p>
+        {% endif %}
+    </section>
+
+    <section class="card">
+        <div class="card-head">
+            <h2>Running low</h2>
+            <a href="{% url 'store:dashboard_products' %}">All perfumes</a>
+        </div>
+
+        {% if low_stock %}
+            <ul class="stock-list">
+                {% for variant in low_stock %}
+                    <li>
+                        <a href="{% url 'store:dashboard_product_edit' variant.product_id %}">
+                            <span>{{ variant.product.name }}<small>{{ variant.volume_ml }} ml</small></span>
+                            <b class="{% if variant.stock == 0 %}out{% endif %}">
+                                {% if variant.stock == 0 %}Sold out{% else %}{{ variant.stock }} left{% endif %}
+                            </b>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="blank">Every bottle size has more than {{ low_stock_level }} in stock.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

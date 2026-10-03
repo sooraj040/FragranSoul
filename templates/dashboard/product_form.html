@@ -1,0 +1,112 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}{% if product %}{{ product.name }}{% else %}Add perfume{% endif %}{% endblock %}
+{% block back %}<a class="back" href="{% url 'store:dashboard_products' %}">← Perfumes</a>{% endblock %}
+{% block heading %}{% if product %}{{ product.name }}{% else %}Add perfume{% endif %}{% endblock %}
+{% block actions %}
+    {% if product %}<a class="btn" href="{{ product.get_absolute_url }}">View in store</a>{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if not has_categories %}
+    <div class="notice error">
+        Every perfume belongs to a fragrance family. <a href="{% url 'store:dashboard_categories' %}">Add a family first</a>.
+    </div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" class="split wide-left">
+    {% csrf_token %}
+
+    <div class="stack">
+        <section class="card">
+            <div class="card-head"><h2>Details</h2></div>
+            {{ form.non_field_errors }}
+
+            <div class="fields">
+                <label class="full">Name {{ form.name }}{{ form.name.errors }}</label>
+                <label>Brand {{ form.brand }}{{ form.brand.errors }}</label>
+                <label>For {{ form.gender }}{{ form.gender.errors }}</label>
+                <label class="full">Fragrance family {{ form.category }}{{ form.category.errors }}</label>
+                <label class="full">Description {{ form.description }}{{ form.description.errors }}</label>
+                <label class="full">Notes {{ form.notes }}
+                    <small>{{ form.notes.help_text }}</small>{{ form.notes.errors }}
+                </label>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-head">
+                <h2>Bottle sizes</h2>
+                <button type="button" class="btn" id="add-size">Add size</button>
+            </div>
+            <p class="hint">Each size has its own price and stock. A perfume appears in the store while at least one size is in stock.</p>
+            {{ formset.management_form }}
+            {{ formset.non_form_errors }}
+
+            <div class="table-wrap">
+                <table class="sizes-table">
+                    <thead>
+                        <tr><th>Size (ml)</th><th>Price (₹)</th><th>Old price (₹)</th><th>Stock</th><th></th></tr>
+                    </thead>
+                    <tbody id="size-rows">
+                        {% for f in formset %}
+                            {% include 'dashboard/_size_row.html' %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="hint">Old price is optional. When it is higher than the price, the store shows it crossed out.</p>
+        </section>
+    </div>
+
+    <div class="stack">
+        <section class="card">
+            <div class="card-head"><h2>Photo</h2></div>
+            {% if product.image %}<img class="photo" src="{{ product.image.url }}" alt="{{ product.name }}">{% endif %}
+            <div class="file">{{ form.image }}{{ form.image.errors }}</div>
+            <p class="hint">Without a photo the store shows an illustrated bottle.</p>
+        </section>
+
+        <section class="card">
+            <div class="card-head"><h2>Visibility</h2></div>
+            <label class="check">{{ form.is_featured }} {{ form.is_featured.label }}</label>
+            <label class="check">{{ form.is_new }} {{ form.is_new.label }}</label>
+        </section>
+
+        <button class="btn dark wide" type="submit">Save perfume</button>
+    </div>
+</form>
+
+{% if product %}
+    <!-- Deleting asks for confirmation because it cannot be undone. -->
+    <details class="confirm card">
+        <summary>Delete this perfume</summary>
+        <p>The perfume and all its bottle sizes will be removed from the store. Past orders keep their details. This cannot be undone.</p>
+        <form method="post" action="{% url 'store:dashboard_product_delete' product.pk %}">
+            {% csrf_token %}
+            <button class="btn danger" type="submit">Delete {{ product.name }}</button>
+        </form>
+    </details>
+{% endif %}
+
+<!-- Blank row copied by the "Add size" button. -->
+<template id="size-row-template">
+    {% include 'dashboard/_size_row.html' with f=formset.empty_form %}
+</template>
+
+<script>
+    // Add another bottle-size row and tell Django's formset about it.
+    const totalForms = document.getElementById("id_variants-TOTAL_FORMS");
+    const sizeRows = document.getElementById("size-rows");
+    const rowTemplate = document.getElementById("size-row-template");
+
+    document.getElementById("add-size").addEventListener("click", () => {
+        const index = Number(totalForms.value);
+        const holder = document.createElement("tbody");
+        holder.innerHTML = rowTemplate.innerHTML.replace(/__prefix__/g, index);
+        const row = holder.querySelector("tr");
+        sizeRows.appendChild(row);
+        totalForms.value = index + 1;
+        row.querySelector("input:not([type=hidden])").focus();
+    });
+</script>
+{% endblock %}

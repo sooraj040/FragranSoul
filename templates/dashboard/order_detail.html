@@ -1,0 +1,83 @@
+{% extends 'dashboard/base.html' %}
+{% load store_extras %}
+{% block title %}Order {{ order.order_number }}{% endblock %}
+{% block back %}<a class="back" href="{% url 'store:dashboard_orders' %}">← Orders</a>{% endblock %}
+{% block heading %}{{ order.order_number }} <span class="status status-{{ order.status }}">{{ order.get_status_display }}</span>{% endblock %}
+
+{% block content %}
+<div class="split wide-left">
+    <section class="card">
+        <div class="card-head">
+            <h2>Items</h2>
+            <span class="muted">Placed {{ order.created_at|date:"j F Y, g:i a" }}</span>
+        </div>
+
+        <!-- Name, size and price are the values saved when the order was placed. -->
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Perfume</th><th class="num">Price</th><th class="num">Qty</th><th class="num">Total</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items.all %}
+                        <tr>
+                            <td>{{ item.product_name }}<small>{{ item.volume_ml }} ml</small></td>
+                            <td class="num">{{ item.unit_price|rupees }}</td>
+                            <td class="num">{{ item.quantity }}</td>
+                            <td class="num">{{ item.line_total|rupees }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="3">Subtotal</td><td class="num">{{ order.subtotal|rupees }}</td></tr>
+                    <tr><td colspan="3">Shipping</td><td class="num">{% if order.shipping %}{{ order.shipping|rupees }}{% else %}Complimentary{% endif %}</td></tr>
+                    <tr class="total"><td colspan="3">Total · {{ order.get_payment_method_display }}</td><td class="num">{{ order.total|rupees }}</td></tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+
+    <div class="stack">
+        <section class="card">
+            <div class="card-head"><h2>Status</h2></div>
+
+            {% if order.is_cancelled %}
+                <p class="blank">This order was cancelled and its items were returned to stock.</p>
+            {% else %}
+                <form method="post" class="status-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="status">
+                    <select name="status" aria-label="Order status">
+                        {% for value, label in status_steps %}
+                            <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn dark" type="submit">Update</button>
+                </form>
+
+                <!-- Cancelling asks for confirmation because it cannot be undone. -->
+                <details class="confirm">
+                    <summary>Cancel this order</summary>
+                    <p>The order will be marked as cancelled and every bottle returned to stock. This cannot be undone.</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="cancel">
+                        <button class="btn danger" type="submit">Cancel order and restock</button>
+                    </form>
+                </details>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="card-head"><h2>Customer</h2></div>
+            <dl class="facts">
+                <div><dt>Name</dt><dd>{{ order.full_name }}</dd></div>
+                <div><dt>Phone</dt><dd>{{ order.phone }}</dd></div>
+                <div><dt>Email</dt><dd>{{ order.email }}</dd></div>
+                <div><dt>Address</dt><dd>{{ order.address|linebreaksbr }}<br>{{ order.city }} {{ order.pin_code }}</dd></div>
+                <div><dt>Account</dt><dd>{% if order.user %}{{ order.user.username }}{% else %}Guest checkout{% endif %}</dd></div>
+            </dl>
+        </section>
+    </div>
+</div>
+{% endblock %}
