@@ -1,15 +1,10 @@
 // Small enhancements for the FragranSoul storefront.
 // Every page works without this file; it only makes things smoother.
 
-document.documentElement.classList.add("js");
+const root = document.documentElement;
+root.classList.add("js");
 
-// Format prices consistently with the Indian Rupee symbol.
-function formatPrice(value) {
-    return "₹" + Number(value).toLocaleString("en-IN", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-    });
-}
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---- Sections fade in as they scroll into view ----
 // Only items that start below the screen are hidden, so anything visible
@@ -26,22 +21,106 @@ if ("IntersectionObserver" in window) {
 
     document.querySelectorAll("[data-reveal]").forEach((item) => {
         if (item.getBoundingClientRect().top > window.innerHeight) {
+            // Neighbours in the same row appear one after another.
+            const position = Array.prototype.indexOf.call(item.parentElement.children, item);
+            item.style.setProperty("--d", (position % 4) * 90 + "ms");
             item.classList.add("reveal-wait");
             revealObserver.observe(item);
         }
     });
 }
 
-// ---- Mobile menu ----
-const header = document.querySelector(".site-header");
+// ---- Menu on small screens ----
 const navToggle = document.querySelector(".nav-toggle");
 
-if (header && navToggle) {
-    navToggle.addEventListener("click", () => {
-        const isOpen = header.classList.toggle("nav-open");
-        navToggle.setAttribute("aria-expanded", isOpen);
+function setMenu(isOpen) {
+    root.classList.toggle("nav-open", isOpen);
+    navToggle.setAttribute("aria-expanded", isOpen);
+}
+
+if (navToggle) {
+    navToggle.addEventListener("click", () => setMenu(!root.classList.contains("nav-open")));
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && root.classList.contains("nav-open")) {
+            setMenu(false);
+            navToggle.focus();
+        }
     });
 }
+
+// ---- Message bar: its lines take turns ----
+document.querySelectorAll("[data-banner]").forEach((banner) => {
+    const lines = Array.from(banner.children);
+    if (lines.length < 2) {
+        return;
+    }
+    let showing = 0;
+    setInterval(() => {
+        lines[showing].classList.remove("is-on");
+        showing = (showing + 1) % lines.length;
+        lines[showing].classList.add("is-on");
+    }, 5000);
+});
+
+// ---- Home slider ----
+// Slides cross-fade on their own every few seconds. Pointing at (or tabbing
+// to) a caption brings up its slide, and on touch screens a sideways swipe
+// moves between them.
+document.querySelectorAll("[data-slider]").forEach((slider) => {
+    const groups = [
+        Array.from(slider.querySelectorAll("[data-slide]")),
+        Array.from(slider.querySelectorAll("[data-slide-tab]")),
+        Array.from(slider.querySelectorAll(".slide-dots i")),
+    ];
+    const count = groups[0].length;
+    if (count < 2) {
+        return;
+    }
+
+    let current = 0;
+    let timer = null;
+
+    function show(index) {
+        current = (index + count) % count;
+        groups.forEach((group) => {
+            group.forEach((item, position) => item.classList.toggle("is-on", position === current));
+        });
+    }
+
+    function stop() {
+        clearInterval(timer);
+    }
+
+    function play() {
+        stop();
+        if (!prefersReducedMotion) {
+            timer = setInterval(() => show(current + 1), 6000);
+        }
+    }
+
+    groups[1].forEach((tab, index) => {
+        tab.addEventListener("mouseenter", () => show(index));
+        tab.addEventListener("focus", () => show(index));
+    });
+    slider.addEventListener("mouseenter", stop);
+    slider.addEventListener("mouseleave", play);
+
+    let touchStart = null;
+    slider.addEventListener("touchstart", (event) => {
+        touchStart = event.touches[0].clientX;
+        stop();
+    }, { passive: true });
+    slider.addEventListener("touchend", (event) => {
+        const moved = event.changedTouches[0].clientX - touchStart;
+        if (Math.abs(moved) > 50) {
+            show(current + (moved < 0 ? 1 : -1));
+        }
+        play();
+    }, { passive: true });
+
+    play();
+});
 
 // ---- Toast messages fade out on their own ----
 document.querySelectorAll(".message").forEach((message) => {
@@ -137,3 +216,33 @@ if (addForm) {
         });
     });
 }
+
+// ---- Moving between pages ----
+// Modern browsers cross-fade page changes from CSS alone (see
+// "@view-transition" in style.css). Choosing a perfume names its picture so
+// that it travels from the card to the product page.
+document.addEventListener("click", (event) => {
+    const link = event.target.closest(".product-card a");
+    if (!link) {
+        return;
+    }
+    // Only one picture on the page may carry the name at a time.
+    const current = document.querySelector(".detail-visual");
+    if (current) {
+        current.style.viewTransitionName = "none";
+    }
+    document.querySelectorAll(".product-visual").forEach((visual) => {
+        visual.style.viewTransitionName = "";
+    });
+    link.closest(".product-card").querySelector(".product-visual").style.viewTransitionName = "product-hero";
+});
+
+// Coming back with the browser's Back button restores the page as it was left.
+window.addEventListener("pageshow", (event) => {
+    if (!event.persisted) {
+        return;
+    }
+    document.querySelectorAll(".product-visual, .detail-visual").forEach((visual) => {
+        visual.style.viewTransitionName = "";
+    });
+});

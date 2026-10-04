@@ -1,5 +1,6 @@
 {% load store_extras %}
-<!-- Reusable perfume card used on the home page and collection page. -->
+<!-- Reusable perfume card used on the shop and product pages: picture, name,
+     a typewritten line of details, then the action and the price. -->
 <article class="product-card" data-reveal>
     <a href="{{ product.get_absolute_url }}" class="product-visual tone-{{ product.gender }}" tabindex="-1" aria-hidden="true">
         {% if product.image %}
@@ -8,7 +9,7 @@
             <div class="bottle-art">
                 <i class="bottle-cap"></i>
                 <i class="bottle-neck"></i>
-                <div class="bottle-body"><span>FS</span></div>
+                <div class="bottle-body"><span>{{ product.name }}<small>FragranSoul</small></span></div>
             </div>
         {% endif %}
 
@@ -16,18 +17,20 @@
             {% if product.is_new %}<span class="badge">New</span>{% endif %}
             {% if product.on_offer %}<span class="badge badge-gold">Offer</span>{% endif %}
         </span>
-
-        <!-- Customers select the bottle size on the product page before adding to bag. -->
-        <span class="card-cta">Choose size</span>
     </a>
 
     <div class="product-meta">
-        <p class="product-brand">{{ product.get_gender_display }} · {{ product.category.name }}</p>
         <h3><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></h3>
-        {% if product.notes %}<p class="notes">{{ product.notes }}</p>{% endif %}
 
-        <!-- The card shows the cheapest available bottle size. -->
+        <p class="card-spec">
+            <span class="sizes">{% for v in product.available_variants %}{{ v.volume_ml }} ml{% if not forloop.last %} · {% endif %}{% empty %}—{% endfor %}</span>
+            <span class="product-brand">{{ product.get_gender_display }} · {{ product.category.name }}</span>
+        </p>
+
+        <!-- Customers choose the bottle size on the product page. The card
+             shows the cheapest available size. -->
         <div class="card-foot">
+            <a class="card-action" href="{{ product.get_absolute_url }}">Choose size</a>
             <span class="price">
                 {% if product.starting_price %}
                     From {{ product.starting_price|rupees }}
@@ -35,7 +38,6 @@
                     Currently unavailable
                 {% endif %}
             </span>
-            <span class="sizes">{% for v in product.available_variants %}{{ v.volume_ml }} ml{% if not forloop.last %} · {% endif %}{% endfor %}</span>
         </div>
     </div>
 </article>
