@@ -12,14 +12,38 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 
-    <!-- Lets the stylesheet know JavaScript is running before the page paints. -->
-    <script>document.documentElement.classList.add("js");</script>
+    <!-- Decides before the page paints whether to play the intro. It plays once
+         per visit, and never for visitors who prefer reduced motion. -->
+    <script>
+        (function (root) {
+            root.classList.add("js");
+            try {
+                if (!sessionStorage.getItem("introSeen") && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                    root.classList.add("intro");
+                    // If main.js never runs, the intro still clears itself.
+                    setTimeout(function () { root.classList.remove("intro"); }, 8000);
+                }
+            } catch (error) {}
+        })(document.documentElement);
+    </script>
 
     <!-- Main site stylesheet. -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
     <a class="skip-link" href="#main">Skip to content</a>
+
+    <!-- Intro shown once per visit. main.js counts it up, then the dark slab
+         slides away on its slanted edge. -->
+    <div class="intro-loader" aria-hidden="true">
+        <div class="intro-panel"></div>
+        <div class="intro-content">
+            <span class="intro-name">FragranSoul</span>
+            <span class="intro-tag">Perfumes — India</span>
+            <span class="intro-bar"><i></i></span>
+            <span class="intro-count" data-intro-count>0%</span>
+        </div>
+    </div>
 
     <!-- Message bar. With more than one line, main.js shows them in turn.
          The amount comes from FREE_SHIPPING_THRESHOLD in settings.py. -->

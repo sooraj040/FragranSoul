@@ -5,6 +5,7 @@
    2. Shared pieces        6. Shop              10. Orders
    3. Header and footer    7. Product page      11. Small screens
                                                 12. Page motion
+                                                13. Motion layer
    4. Home                 8. Bag and checkout
    ============================================================= */
 
@@ -21,7 +22,10 @@
     --gold: #595959;
     --gold-soft: #bdbdbd;
     --gold-sheen: linear-gradient(100deg, #8f6c2e 0%, #e9d5a4 45%, #b8924a 70%, #8f6c2e 100%);
-    --night: #2e1410;
+    --night: #161616;
+    --ease-reveal: cubic-bezier(.16, 1, .3, 1);
+    --ease-editorial: cubic-bezier(.65, .05, .36, 1);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     --danger: #9a3b3b;
     --success: #3f6b4f;
 
@@ -204,16 +208,15 @@ h3 {
     transition: background .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease), box-shadow .35s var(--ease);
 }
 
-/* The fill swipes in from the left and leaves to the right. */
+/* The fill is uncovered from the left behind a slanted edge. */
 .btn::before {
     content: "";
     position: absolute;
     inset: -1px;
     z-index: -1;
     background: var(--ink);
-    transform: scaleX(0);
-    transform-origin: right;
-    transition: transform .5s var(--ease);
+    clip-path: polygon(0 0, 0 0, -18% 100%, 0 100%);
+    transition: clip-path .5s var(--ease-reveal);
 }
 
 .btn:hover {
@@ -221,8 +224,7 @@ h3 {
 }
 
 .btn:hover::before {
-    transform: scaleX(1);
-    transform-origin: left;
+    clip-path: polygon(0 0, 118% 0, 100% 100%, 0 100%);
 }
 
 .btn.dark {
@@ -716,7 +718,7 @@ h3 {
 .head-nav a {
     position: relative;
     padding: 6px 0;
-    color: var(--ink-soft);
+    color: #8a8a8a;
     font: 700 14px/1 var(--display);
     letter-spacing: .04em;
     text-transform: uppercase;
@@ -724,27 +726,20 @@ h3 {
     transition: color .2s;
 }
 
-/* The underline draws in from the left and leaves to the right. */
+/* A black copy of the word (data-text, set by main.js) is uncovered on a
+   slant when the link is pointed at. */
 .head-nav a::after {
-    content: "";
+    content: attr(data-text);
     position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    height: 2px;
-    background: currentColor;
-    transform: scaleX(0);
-    transform-origin: right;
-    transition: transform .35s var(--ease);
-}
-
-.head-nav a:hover {
+    inset: 6px 0;
     color: var(--ink);
+    clip-path: polygon(0 -20%, 0 -20%, -18% 120%, 0 120%);
+    transition: clip-path .45s var(--ease-reveal);
 }
 
-.head-nav a:hover::after {
-    transform: scaleX(1);
-    transform-origin: left;
+.head-nav a:hover::after,
+.head-nav a:focus-visible::after {
+    clip-path: polygon(0 -20%, 118% -20%, 100% 120%, 0 120%);
 }
 
 .head-bag {
@@ -909,6 +904,7 @@ main:has(.slider) + .site-footer {
     .head-nav a {
         padding: 13px 0;
         border-bottom: 1px solid var(--line);
+        color: var(--ink-soft);
     }
 
     .head-nav a::after {
@@ -1049,7 +1045,7 @@ main:has(.slider) + .site-footer {
     text-transform: uppercase;
 }
 
-.slide-tab span {
+.slide-tab > span {
     display: block;
     font: 400 13px/1.4 var(--mono);
 }
@@ -1093,10 +1089,6 @@ main:has(.slider) + .site-footer {
     }
 }
 
-/* The title of the arriving caption lifts into place. */
-.slide-tab.is-on .slide-title {
-    animation: rise .7s var(--ease) backwards;
-}
 
 .slide-dots {
     display: none;
@@ -2446,13 +2438,16 @@ main:has(.slider) + .site-footer {
 
 /* ---------- 12. Page motion ---------- */
 
-/* Pictures are uncovered with a swipe as they scroll into view. */
+/* Pictures are uncovered behind a slanted edge as they scroll into view,
+   and tilt towards the pointer (--tilt-x / --tilt-y, set by main.js). */
 .product-visual {
-    transition: box-shadow .4s var(--ease), clip-path 1.1s var(--ease) var(--d, 0ms);
+    clip-path: polygon(0 0, 118% 0, 100% 100%, 0 100%);
+    transform: perspective(700px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transition: clip-path 1.2s var(--ease-editorial) var(--d, 0ms), transform .35s var(--ease);
 }
 
 .reveal-wait .product-visual {
-    clip-path: inset(0 0 100% 0);
+    clip-path: polygon(0 0, 0 0, -18% 100%, 0 100%);
 }
 
 /* The product page settles in piece by piece. */
@@ -2466,9 +2461,10 @@ main:has(.slider) + .site-footer {
 .detail-copy > :nth-child(4) { animation-delay: .36s; }
 .detail-copy > :nth-child(n + 5) { animation-delay: .43s; }
 
-/* Moving between pages: pages cross-fade, and a chosen perfume's picture
-   travels from its card to the product page. main.js gives the clicked card
-   the matching name just before leaving. */
+/* Moving between pages: the new page arrives from the right behind a slanted
+   edge while the old one dims, and a chosen perfume's picture travels from
+   its card to the product page. main.js gives the clicked card the matching
+   name just before leaving. */
 @view-transition {
     navigation: auto;
 }
@@ -2479,6 +2475,31 @@ main:has(.slider) + .site-footer {
 
 .detail-visual {
     view-transition-name: product-hero;
+}
+
+::view-transition-old(root) {
+    animation: page-out .9s cubic-bezier(.65, .05, .36, 1) both;
+}
+
+::view-transition-new(root) {
+    animation: page-wipe .9s cubic-bezier(.65, .05, .36, 1) both;
+}
+
+@keyframes page-out {
+    to {
+        filter: brightness(.4);
+        transform: translateX(-6%);
+    }
+}
+
+@keyframes page-wipe {
+    from {
+        clip-path: polygon(118% 0, 100% 0, 100% 100%, 100% 100%);
+    }
+
+    to {
+        clip-path: polygon(0 0, 100% 0, 100% 100%, -18% 100%);
+    }
 }
 
 ::view-transition-group(product-hero) {
@@ -2496,5 +2517,386 @@ main:has(.slider) + .site-footer {
 @media (prefers-reduced-motion: reduce) {
     @view-transition {
         navigation: none;
+    }
+}
+
+/* ---------- 13. Motion layer ---------- */
+
+/* -- Intro: a dark slanted slab with a counter -- */
+.intro-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    display: none;
+    overflow: hidden;
+}
+
+.intro .intro-loader {
+    display: block;
+}
+
+.intro body {
+    overflow: hidden;
+}
+
+/* The slab is wider than the screen and skewed, so its edges start hidden. */
+.intro-panel {
+    position: absolute;
+    top: -10%;
+    bottom: -10%;
+    left: -20vw;
+    width: 140vw;
+    background: var(--night);
+    transform: skewX(-7deg);
+    transition: transform 1.1s var(--ease-editorial);
+}
+
+.intro-leave .intro-panel {
+    transform: skewX(-7deg) translateX(150vw);
+}
+
+.intro-content {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 10px;
+    color: #fff;
+    transition: opacity .4s, transform 1.1s var(--ease-editorial);
+}
+
+.intro-leave .intro-content {
+    opacity: 0;
+    transform: translateX(-12vw);
+}
+
+.intro-name {
+    font: 700 46px/1 var(--display);
+    letter-spacing: .02em;
+    text-transform: uppercase;
+}
+
+.intro-tag {
+    font: 700 11px/1 var(--mono);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.intro-bar {
+    width: 180px;
+    height: 1px;
+    margin-top: 26px;
+    background: rgba(255, 255, 255, .22);
+}
+
+.intro-bar i {
+    display: block;
+    height: 100%;
+    background: #fff;
+    transform: scaleX(var(--load, 0));
+    transform-origin: left;
+}
+
+.intro-count {
+    color: rgba(255, 255, 255, .65);
+    font: 400 13px/1 var(--mono);
+    font-variant-numeric: tabular-nums;
+}
+
+/* The page waits for the intro before it animates in. */
+.intro:not(.intro-leave) main * {
+    animation-play-state: paused;
+}
+
+/* -- Titles arrive letter by letter (wrapped by main.js) -- */
+.word {
+    display: inline-block;
+    margin-bottom: -.1em;
+    padding-bottom: .1em;
+    overflow: hidden;
+    vertical-align: top;
+}
+
+.char {
+    display: inline-block;
+    animation: char-in .8s var(--ease-reveal) calc(var(--c, 0) * 30ms + .1s) backwards;
+}
+
+@keyframes char-in {
+    from {
+        transform: translateY(115%);
+    }
+}
+
+/* Slider titles replay each time their caption becomes current. */
+.slide-title .char {
+    animation: none;
+}
+
+.slide-tab.is-on .slide-title .char {
+    animation: char-in .8s var(--ease-reveal) calc(var(--c, 0) * 30ms) backwards;
+}
+
+/* -- Home slider: slides wipe over one another on a slant -- */
+.slide {
+    opacity: 1;
+    transition: none;
+    transform: translateY(calc(var(--away, 0) * 16%));
+}
+
+/* The outgoing slide stays visible underneath the incoming one. */
+.slide.is-prev {
+    z-index: 1;
+    visibility: visible;
+}
+
+.slide.is-on {
+    z-index: 2;
+    transition: none;
+    animation: slide-wipe 1.15s var(--ease-editorial);
+}
+
+@keyframes slide-wipe {
+    from {
+        clip-path: polygon(118% 0, 100% 0, 100% 100%, 100% 100%);
+    }
+
+    to {
+        clip-path: polygon(0 0, 100% 0, 100% 100%, -18% 100%);
+    }
+}
+
+/* Film grain over the pictures. */
+.slider::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: var(--grain);
+    opacity: .35;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+}
+
+.slide-tabs,
+.slide-dots,
+.scroll-hint {
+    z-index: 4;
+}
+
+/* Captions fade as the slider scrolls away (--away is set by main.js). */
+.slide-tabs {
+    opacity: calc(1 - var(--away, 0) * 1.6);
+}
+
+/* The drawn bottle bobs gently once it has arrived. */
+.slide.is-on .bottle-art,
+.detail-visual .bottle-art {
+    animation: bottle-float 7s ease-in-out 1.4s infinite;
+}
+
+@keyframes bottle-float {
+    50% {
+        translate: 0 -14px;
+    }
+}
+
+.scroll-hint {
+    position: absolute;
+    right: 28px;
+    bottom: 54px;
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    font: 400 11px/1 var(--mono);
+    writing-mode: vertical-rl;
+}
+
+.scroll-hint i {
+    width: 1px;
+    height: 44px;
+    background: #fff;
+    transform-origin: top;
+    animation: hint-bob 2s var(--ease-editorial) infinite;
+}
+
+@keyframes hint-bob {
+    0% {
+        transform: scaleY(0);
+    }
+
+    50% {
+        transform: scaleY(1);
+        transform-origin: top;
+    }
+
+    51% {
+        transform-origin: bottom;
+    }
+
+    100% {
+        transform: scaleY(0);
+        transform-origin: bottom;
+    }
+}
+
+/* -- Bands of large type drifting in opposite directions -- */
+.type-bands {
+    padding: 56px 0 64px;
+    overflow: hidden;
+}
+
+.type-band {
+    display: flex;
+    width: max-content;
+    font: 700 clamp(46px, 8vw, 120px)/1.08 var(--display);
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    animation: band-left 40s linear infinite;
+}
+
+.type-band-outline {
+    color: transparent;
+    animation-name: band-right;
+    -webkit-text-stroke: 1px var(--ink);
+}
+
+@keyframes band-left {
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes band-right {
+    from {
+        transform: translateX(-50%);
+    }
+}
+
+/* -- The footer is uncovered from underneath as the page ends -- */
+main {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 96px;
+    background: var(--bg);
+    box-shadow: 0 34px 60px -34px rgba(0, 0, 0, .4);
+}
+
+main:has(.slider) {
+    padding-bottom: 0;
+}
+
+.site-footer {
+    position: sticky;
+    bottom: 0;
+    margin-top: 0;
+}
+
+/* -- Progress line across the top -- */
+.scroll-progress {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 60;
+    height: 2px;
+    background: var(--ink);
+    transform: scaleX(0);
+    transform-origin: left;
+    pointer-events: none;
+}
+
+/* -- Pointer dot: grows over links, becomes a label over pictures -- */
+.cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 500;
+    display: grid;
+    place-items: center;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: #fff;
+    color: #fff;
+    font: 700 11px/1 var(--mono);
+    mix-blend-mode: difference;
+    opacity: 0;
+    pointer-events: none;
+    transition: width .35s var(--ease-reveal), height .35s var(--ease-reveal), margin .35s var(--ease-reveal),
+        opacity .3s, background .3s;
+}
+
+.cursor.is-visible {
+    opacity: 1;
+}
+
+.cursor.is-link {
+    width: 46px;
+    height: 46px;
+    margin: -23px 0 0 -23px;
+}
+
+.cursor.is-label {
+    width: 84px;
+    height: 84px;
+    margin: -42px 0 0 -42px;
+    background: var(--night);
+    mix-blend-mode: normal;
+}
+
+.cursor.is-down {
+    opacity: .6;
+}
+
+.cursor span {
+    opacity: 0;
+    transition: opacity .2s;
+}
+
+.cursor.is-label span {
+    opacity: 1;
+}
+
+/* -- Browsers without page transitions get a slanted slab instead -- */
+.page-curtain {
+    position: fixed;
+    top: -10%;
+    bottom: -10%;
+    left: -20vw;
+    z-index: 300;
+    width: 140vw;
+    background: var(--night);
+    transform: skewX(-7deg) translateX(150vw);
+    pointer-events: none;
+    transition: transform .5s var(--ease-editorial);
+}
+
+.is-leaving .page-curtain {
+    transform: skewX(-7deg);
+}
+
+.no-vt main {
+    animation: rise .7s var(--ease) backwards;
+}
+
+@media (max-width: 900px) {
+    main {
+        padding-bottom: 72px;
+    }
+
+    .scroll-hint {
+        display: none;
+    }
+
+    .type-bands {
+        padding: 36px 0 44px;
+    }
+
+    .intro-name {
+        font-size: 36px;
     }
 }

@@ -5,6 +5,86 @@ const root = document.documentElement;
 root.classList.add("js");
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const hasMouse = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+// ---- Intro ----
+// base.html adds "intro" on the first page of a visit. The counter follows the
+// page load, then the dark slab slides away and the page animates in.
+if (root.classList.contains("intro")) {
+    const counter = document.querySelector("[data-intro-count]");
+    const bar = document.querySelector(".intro-bar i");
+    const started = performance.now();
+    const shortest = 1600;
+    const longest = 5000;
+    let pageLoaded = document.readyState === "complete";
+
+    window.addEventListener("load", () => {
+        pageLoaded = true;
+    });
+
+    function leaveIntro() {
+        try {
+            sessionStorage.setItem("introSeen", "1");
+        } catch (error) {
+            // Private browsing: the intro simply plays again next page.
+        }
+        root.classList.add("intro-leave");
+        setTimeout(() => root.classList.remove("intro", "intro-leave"), 1200);
+    }
+
+    function count(now) {
+        const elapsed = now - started;
+        let progress = Math.min(elapsed / shortest, 1);
+        // Hold just short of 100% until the page has really finished loading.
+        if (!pageLoaded && elapsed < longest) {
+            progress = Math.min(progress, 0.92);
+        }
+        counter.textContent = Math.round(progress * 100) + "%";
+        bar.style.setProperty("--load", progress.toFixed(3));
+        if (progress < 1) {
+            requestAnimationFrame(count);
+        } else {
+            setTimeout(leaveIntro, 250);
+        }
+    }
+
+    requestAnimationFrame(count);
+}
+
+// ---- Titles arrive letter by letter ----
+// Each letter is wrapped so style.css can raise them one after another. Words
+// stay whole so a title never breaks in the middle of one.
+document.querySelectorAll(".page-head h1, .detail-copy h1, .auth-card h1, .slide-title").forEach((title) => {
+    const text = title.textContent.trim();
+    const words = text.split(/\s+/);
+    let position = 0;
+
+    title.setAttribute("aria-label", text);
+    title.textContent = "";
+
+    words.forEach((word, index) => {
+        const wrap = document.createElement("span");
+        wrap.className = "word";
+        wrap.setAttribute("aria-hidden", "true");
+        Array.from(word).forEach((letter) => {
+            const cell = document.createElement("span");
+            cell.className = "char";
+            cell.textContent = letter;
+            cell.style.setProperty("--c", position);
+            position += 1;
+            wrap.appendChild(cell);
+        });
+        title.appendChild(wrap);
+        if (index < words.length - 1) {
+            title.append(" ");
+        }
+    });
+});
+
+// ---- Navigation: a darker copy of each word is uncovered on a slant ----
+document.querySelectorAll(".head-nav a").forEach((link) => {
+    link.dataset.text = link.textContent.trim();
+});
 
 // ---- Sections fade in as they scroll into view ----
 // Only items that start below the screen are hidden, so anything visible
@@ -126,7 +206,7 @@ document.querySelectorAll("[data-slider]").forEach((slider) => {
 
     // Keep the full sentence for assistive technology and for retyping.
     const sentences = tabs.map((tab) => {
-        const line = tab.querySelector("span");
+        const line = tab.querySelector(":scope > span");
         const text = line.textContent;
         tab.setAttribute("aria-label", tab.querySelector(".slide-title").textContent + ". " + text);
         return { line, text };
@@ -159,6 +239,8 @@ document.querySelectorAll("[data-slider]").forEach((slider) => {
         if (next === current) {
             return;
         }
+        // The outgoing slide stays underneath while the new one wipes over it.
+        slides.forEach((slide, position) => slide.classList.toggle("is-prev", position === current));
         current = next;
         [slides, tabs, dots].forEach((group) => {
             group.forEach((item, position) => item.classList.toggle("is-on", position === current));
@@ -201,6 +283,160 @@ document.querySelectorAll("[data-slider]").forEach((slider) => {
 
     typeOut(0);
 });
+
+// ---- Scroll-driven motion ----
+// One pass per frame: the progress line across the top, and the home slider
+// drifting more slowly than the page as it scrolls away.
+if (!prefersReducedMotion) {
+    const homeSlider = document.querySelector(".slider");
+    const progressLine = document.createElement("div");
+    let frameQueued = false;
+
+    progressLine.className = "scroll-progress";
+    progressLine.setAttribute("aria-hidden", "true");
+    document.body.appendChild(progressLine);
+
+    function updateScroll() {
+        frameQueued = false;
+        const furthest = document.documentElement.scrollHeight - window.innerHeight;
+        const done = furthest > 0 ? Math.min(Math.max(window.scrollY / furthest, 0), 1) : 0;
+        progressLine.style.transform = "scaleX(" + done + ")";
+        if (homeSlider) {
+            const away = Math.min(Math.max(window.scrollY / homeSlider.offsetHeight, 0), 1);
+            homeSlider.style.setProperty("--away", away.toFixed(3));
+        }
+    }
+
+    window.addEventListener("scroll", () => {
+        if (!frameQueued) {
+            frameQueued = true;
+            requestAnimationFrame(updateScroll);
+        }
+    }, { passive: true });
+    window.addEventListener("resize", updateScroll);
+    updateScroll();
+}
+
+// ---- Smooth wheel scrolling ----
+// The mouse wheel glides to its destination instead of jumping. Touch
+// screens, the keyboard and the scrollbar keep their normal behaviour.
+if (!prefersReducedMotion && hasMouse) {
+    let destination = window.scrollY;
+    let position = window.scrollY;
+    let gliding = false;
+
+    function scrollsOnItsOwn(element) {
+        for (let node = element; node && node !== document.body; node = node.parentElement) {
+            const overflow = getComputedStyle(node).overflowY;
+            if ((overflow === "auto" || overflow === "scroll") && node.scrollHeight > node.clientHeight) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function glide() {
+        position += (destination - position) * 0.11;
+        if (Math.abs(destination - position) < 0.5) {
+            position = destination;
+            gliding = false;
+        }
+        window.scrollTo({ top: position, behavior: "instant" });
+        if (gliding) {
+            requestAnimationFrame(glide);
+        }
+    }
+
+    window.addEventListener("wheel", (event) => {
+        const busy = root.classList.contains("intro");
+        if (event.ctrlKey || busy || Math.abs(event.deltaX) > Math.abs(event.deltaY) || scrollsOnItsOwn(event.target)) {
+            return;
+        }
+        event.preventDefault();
+
+        const lineHeight = event.deltaMode === 1 ? 32 : event.deltaMode === 2 ? window.innerHeight : 1;
+        const furthest = document.documentElement.scrollHeight - window.innerHeight;
+        if (!gliding) {
+            destination = position = window.scrollY;
+        }
+        destination = Math.min(Math.max(destination + event.deltaY * lineHeight, 0), furthest);
+        if (!gliding) {
+            gliding = true;
+            requestAnimationFrame(glide);
+        }
+    }, { passive: false });
+}
+
+// ---- Pointer effects (mouse only) ----
+if (!prefersReducedMotion && hasMouse) {
+    // A dot trails the pointer. It grows over anything clickable, and over
+    // pictures that open a perfume it becomes a round "View" label.
+    document.querySelectorAll(".slide, .slide-tab, .product-visual").forEach((item) => {
+        item.dataset.cursor = "View";
+    });
+
+    const cursor = document.createElement("div");
+    const cursorLabel = document.createElement("span");
+    cursor.className = "cursor";
+    cursor.setAttribute("aria-hidden", "true");
+    cursor.appendChild(cursorLabel);
+    document.body.appendChild(cursor);
+
+    let cursorX = 0;
+    let cursorY = 0;
+    let pointerX = 0;
+    let pointerY = 0;
+    let cursorShown = false;
+
+    document.addEventListener("pointermove", (event) => {
+        if (event.pointerType !== "mouse") {
+            return;
+        }
+        pointerX = event.clientX;
+        pointerY = event.clientY;
+        if (!cursorShown) {
+            cursorShown = true;
+            cursorX = pointerX;
+            cursorY = pointerY;
+            cursor.classList.add("is-visible");
+        }
+        const labelled = event.target.closest("[data-cursor]");
+        cursorLabel.textContent = labelled ? labelled.dataset.cursor : "";
+        cursor.classList.toggle("is-label", Boolean(labelled));
+        cursor.classList.toggle("is-link", !labelled && Boolean(event.target.closest("a, button, select, label, input")));
+    });
+
+    document.documentElement.addEventListener("mouseleave", () => {
+        cursorShown = false;
+        cursor.classList.remove("is-visible");
+    });
+    document.addEventListener("mousedown", () => cursor.classList.add("is-down"));
+    document.addEventListener("mouseup", () => cursor.classList.remove("is-down"));
+
+    (function follow() {
+        cursorX += (pointerX - cursorX) * 0.22;
+        cursorY += (pointerY - cursorY) * 0.22;
+        cursor.style.translate = cursorX.toFixed(1) + "px " + cursorY.toFixed(1) + "px";
+        requestAnimationFrame(follow);
+    })();
+
+    // Perfume pictures tilt towards the pointer.
+    document.querySelectorAll(".product-card").forEach((card) => {
+        const visual = card.querySelector(".product-visual");
+
+        card.addEventListener("pointermove", (event) => {
+            const box = visual.getBoundingClientRect();
+            const across = (event.clientX - box.left) / box.width - 0.5;
+            const down = (event.clientY - box.top) / box.height - 0.5;
+            visual.style.setProperty("--tilt-y", (across * 9).toFixed(2) + "deg");
+            visual.style.setProperty("--tilt-x", (-down * 9).toFixed(2) + "deg");
+        });
+        card.addEventListener("pointerleave", () => {
+            visual.style.removeProperty("--tilt-x");
+            visual.style.removeProperty("--tilt-y");
+        });
+    });
+}
 
 // ---- Toast messages fade out on their own ----
 document.querySelectorAll(".message").forEach((message) => {
@@ -298,9 +534,10 @@ if (addForm) {
 }
 
 // ---- Moving between pages ----
-// Modern browsers cross-fade page changes from CSS alone (see
-// "@view-transition" in style.css). Choosing a perfume names its picture so
-// that it travels from the card to the product page.
+// Modern browsers animate page changes from CSS alone: the new page arrives
+// behind a slanted edge (see "@view-transition" in style.css). Choosing a
+// perfume names its picture so that it travels from the card to the product
+// page.
 document.addEventListener("click", (event) => {
     const link = event.target.closest(".product-card a");
     if (!link) {
@@ -317,11 +554,44 @@ document.addEventListener("click", (event) => {
     link.closest(".product-card").querySelector(".product-visual").style.viewTransitionName = "product-hero";
 });
 
+// Other browsers get a dark slab that sweeps across before the next page loads.
+if (!("CSSViewTransitionRule" in window) && !prefersReducedMotion) {
+    root.classList.add("no-vt");
+
+    const curtain = document.createElement("div");
+    curtain.className = "page-curtain";
+    document.body.appendChild(curtain);
+
+    document.addEventListener("click", (event) => {
+        const link = event.target.closest("a[href]");
+        if (!link || event.defaultPrevented || event.button !== 0) {
+            return;
+        }
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+        if (link.target || link.hasAttribute("download") || link.origin !== location.origin) {
+            return;
+        }
+        // Links to another part of the same page just scroll.
+        if (link.pathname === location.pathname && link.search === location.search && link.hash) {
+            return;
+        }
+
+        event.preventDefault();
+        root.classList.add("is-leaving");
+        setTimeout(() => {
+            location.href = link.href;
+        }, 500);
+    });
+}
+
 // Coming back with the browser's Back button restores the page as it was left.
 window.addEventListener("pageshow", (event) => {
     if (!event.persisted) {
         return;
     }
+    root.classList.remove("is-leaving");
     document.querySelectorAll(".product-visual, .detail-visual").forEach((visual) => {
         visual.style.viewTransitionName = "";
     });

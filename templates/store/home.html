@@ -60,5 +60,18 @@
             {% for value, label in collections %}<i{% if forloop.first %} class="is-on"{% endif %}></i>{% endfor %}
         {% endif %}
     </div>
+
+    <div class="scroll-hint" aria-hidden="true">Scroll<i></i></div>
 </section>
+
+<!-- Two bands of large type drifting in opposite directions. Each line is
+     written twice so the loop has no visible seam. -->
+<div class="type-bands" aria-hidden="true">
+    <p class="type-band">
+        {% for _ in "12" %}<span>FragranSoul — Perfumes for men, women &amp; unisex — Eau de parfum — </span>{% endfor %}
+    </p>
+    <p class="type-band type-band-outline">
+        {% for _ in "12" %}<span>Cash on delivery — Complimentary shipping over {{ free_shipping_threshold|rupees }} — Choose your size — </span>{% endfor %}
+    </p>
+</div>
 {% endblock %}
