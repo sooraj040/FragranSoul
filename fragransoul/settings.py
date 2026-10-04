@@ -34,7 +34,7 @@ ON_VERCEL = os.environ.get('VERCEL') == '1'
 
 # Production values come from environment variables; the fallbacks below are
 # for local development only.
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fraagransoul-dev-key-change-in-production')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fragransoul-dev-key-change-in-production')
 DEBUG = os.environ.get('DJANGO_DEBUG', '0' if ON_VERCEL else '1') == '1'
 
 ALLOWED_HOSTS = env_list(
@@ -59,7 +59,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware', 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-ROOT_URLCONF = 'fraagransoul.urls'
+ROOT_URLCONF = 'fragransoul.urls'
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
     'DIRS': [BASE_DIR / 'templates'], 'APP_DIRS': True,
@@ -68,7 +68,7 @@ TEMPLATES = [{
         'django.contrib.messages.context_processors.messages', 'store.context_processors.storefront',
     ]},
 }]
-WSGI_APPLICATION = 'fraagransoul.wsgi.application'
+WSGI_APPLICATION = 'fragransoul.wsgi.application'
 
 # Use a hosted database when DATABASE_URL is set (needed on Vercel, whose
 # filesystem is read-only); otherwise fall back to local SQLite.

@@ -1,5 +1,5 @@
 /* =============================================================
-   FraagranSoul storefront
+   FragranSoul storefront
    -------------------------------------------------------------
    1. Tokens and base      5. Product cards     9. Forms and account
    2. Shared pieces        6. Shop              10. Orders
@@ -9,24 +9,26 @@
 
 /* ---------- 1. Tokens and base ---------- */
 :root {
-    --bg: #faf7f2;
+    --bg: #fbf8f3;
     --surface: #ffffff;
-    --sand: #f2ece2;
-    --sand-deep: #e7dccb;
-    --ink: #1c1915;
-    --ink-soft: #5c544a;
-    --muted: #8c8376;
-    --line: #e5ddd0;
-    --gold: #a57f45;
-    --gold-soft: #dcc7a0;
+    --sand: #f3ede3;
+    --sand-deep: #e6dac7;
+    --ink: #12100d;
+    --ink-soft: #564e44;
+    --muted: #8a8174;
+    --line: #e7dfd2;
+    --gold: #a8843f;
+    --gold-soft: #e0cba0;
+    --gold-sheen: linear-gradient(100deg, #8f6c2e 0%, #e9d5a4 45%, #b8924a 70%, #8f6c2e 100%);
+    --night: #0c0a08;
     --danger: #9a3b3b;
     --success: #3f6b4f;
 
     --display: "Cormorant Garamond", "Times New Roman", serif;
     --body: "DM Sans", "Segoe UI", Arial, sans-serif;
 
-    --radius: 4px;
-    --shadow: 0 18px 40px -18px rgba(28, 25, 21, .22);
+    --radius: 2px;
+    --shadow: 0 30px 60px -28px rgba(18, 16, 13, .34);
     --ease: cubic-bezier(.2, .7, .2, 1);
 }
 
@@ -130,13 +132,45 @@ h3 {
 }
 
 .kicker {
-    display: block;
-    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
     color: var(--gold);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: .22em;
+    letter-spacing: .32em;
     text-transform: uppercase;
+}
+
+.kicker::before {
+    content: "";
+    flex: none;
+    width: 34px;
+    height: 1px;
+    background: currentColor;
+}
+
+/* Small field labels stay plain. */
+.notes-box .kicker::before,
+.size-heading .kicker::before,
+.receipt-grid .kicker::before {
+    display: none;
+}
+
+/* Centred headings get a rule on both sides. */
+.page-head.center .kicker,
+.auth-card .kicker {
+    justify-content: center;
+}
+
+.page-head.center .kicker::after,
+.auth-card .kicker::after {
+    content: "";
+    flex: none;
+    width: 34px;
+    height: 1px;
+    background: currentColor;
 }
 
 .lead {
@@ -149,17 +183,17 @@ h3 {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 52px;
-    padding: 0 32px;
+    min-height: 54px;
+    padding: 0 38px;
     border: 1px solid var(--ink);
     border-radius: var(--radius);
     background: transparent;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: .12em;
+    letter-spacing: .22em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background .25s var(--ease), color .25s var(--ease), border-color .25s var(--ease);
+    transition: background .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease), box-shadow .35s var(--ease);
 }
 
 .btn:hover {
@@ -175,6 +209,7 @@ h3 {
 .btn.dark:hover {
     background: var(--gold);
     border-color: var(--gold);
+    box-shadow: 0 16px 30px -16px rgba(168, 132, 63, .8);
 }
 
 .btn:disabled {
@@ -192,9 +227,9 @@ h3 {
     display: inline-block;
     padding-bottom: 4px;
     border-bottom: 1px solid currentColor;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: .08em;
+    letter-spacing: .2em;
     text-transform: uppercase;
     transition: color .2s, border-color .2s;
 }
@@ -233,7 +268,7 @@ h3 {
 }
 
 .section {
-    padding: 96px 0;
+    padding: 120px 0;
 }
 
 .section + .section {
@@ -245,18 +280,23 @@ h3 {
     align-items: flex-end;
     justify-content: space-between;
     gap: 24px;
-    margin-bottom: 44px;
+    margin-bottom: 56px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--line);
 }
 
 .section-head h2 {
-    font-size: clamp(34px, 4vw, 50px);
+    font-size: clamp(38px, 4.6vw, 60px);
+    font-weight: 400;
 }
 
 .page-head {
     margin-bottom: 40px;
     padding: 64px 0 48px;
     border-bottom: 1px solid var(--line);
-    background: linear-gradient(180deg, var(--sand), var(--bg));
+    background:
+        radial-gradient(circle at 85% 0%, rgba(224, 203, 160, .35), transparent 46%),
+        linear-gradient(180deg, var(--sand), var(--bg));
 }
 
 .tabs {
@@ -421,7 +461,7 @@ h3 {
     width: 4.6em;
     height: 3.2em;
     border-radius: .35em .35em .1em .1em;
-    background: linear-gradient(90deg, #26211d, #6f6459 46%, #2b2622);
+    background: linear-gradient(90deg, #6d5223, #f1dfb4 44%, #a8843f 70%, #5f471d);
 }
 
 .bottle-neck {
@@ -442,8 +482,9 @@ h3 {
 
 .bottle-body span {
     padding: .7em .9em;
-    border: 1px solid var(--sand-deep);
-    background: #fcf9f4;
+    border: 1px solid var(--gold-soft);
+    background: #fdfaf5;
+    box-shadow: inset 0 0 0 .22em #fdfaf5, inset 0 0 0 .28em var(--gold-soft);
     color: var(--ink);
     font: 500 1.4em/1.1 var(--display);
     letter-spacing: .16em;
@@ -471,11 +512,12 @@ h3 {
 
 /* ---------- 3. Header and footer ---------- */
 .announcement {
-    padding: 10px 16px;
-    background: var(--ink);
+    padding: 11px 16px;
+    border-bottom: 1px solid rgba(224, 203, 160, .28);
+    background: var(--night);
     color: #e9dfcd;
-    font-size: 12px;
-    letter-spacing: .12em;
+    font-size: 11px;
+    letter-spacing: .24em;
     text-align: center;
     text-transform: uppercase;
 }
@@ -490,15 +532,15 @@ h3 {
     top: 0;
     z-index: 50;
     border-bottom: 1px solid var(--line);
-    background: rgba(250, 247, 242, .92);
-    backdrop-filter: blur(12px);
+    background: rgba(251, 248, 243, .88);
+    backdrop-filter: saturate(140%) blur(18px);
 }
 
 .nav-wrap {
     display: flex;
     align-items: center;
-    gap: 40px;
-    height: 80px;
+    gap: 44px;
+    height: 88px;
 }
 
 .logo {
@@ -515,16 +557,16 @@ h3 {
     height: 40px;
     border: 1px solid var(--gold);
     border-radius: 50%;
-    background: var(--ink);
+    background: var(--night);
+    box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--gold-soft);
     color: var(--gold-soft);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: .1em;
+    font: 500 15px/1 var(--display);
+    letter-spacing: .08em;
 }
 
 .logo-text {
-    font: 500 27px/1 var(--display);
-    letter-spacing: .01em;
+    font: 500 28px/1 var(--display);
+    letter-spacing: .04em;
 }
 
 .logo-text em {
@@ -542,9 +584,10 @@ h3 {
 .nav-link {
     position: relative;
     padding: 6px 0;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
-    letter-spacing: .02em;
+    letter-spacing: .18em;
+    text-transform: uppercase;
 }
 
 .site-nav > a::after,
@@ -651,9 +694,20 @@ h3 {
 }
 
 .site-footer {
-    margin-top: 96px;
-    background: var(--ink);
+    position: relative;
+    margin-top: 120px;
+    background: var(--night);
     color: #cfc6b8;
+}
+
+.site-footer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--gold-sheen);
 }
 
 .footer-main {
@@ -670,6 +724,7 @@ h3 {
 
 .site-footer .logo-mark {
     background: transparent;
+    box-shadow: none;
 }
 
 .footer-brand p {
@@ -701,18 +756,32 @@ h3 {
 .footer-bottom {
     padding-top: 22px;
     padding-bottom: 22px;
-    border-top: 1px solid #36312b;
+    border-top: 1px solid #2a2520;
     color: #8f867a;
-    font-size: 13px;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-align: center;
+    text-transform: uppercase;
 }
 
 /* ---------- 4. Home ---------- */
 .hero {
+    position: relative;
     background:
-        radial-gradient(circle at 76% 50%, rgba(165, 127, 69, .5), transparent 40%),
-        linear-gradient(120deg, #17140f 0%, #272018 62%, #1b1712 100%);
+        radial-gradient(circle at 74% 46%, rgba(184, 146, 74, .42), transparent 38%),
+        radial-gradient(circle at 12% 110%, rgba(184, 146, 74, .16), transparent 42%),
+        linear-gradient(120deg, #0b0907 0%, #1c1610 60%, #0e0c09 100%);
     color: #f6efe3;
     overflow: hidden;
+}
+
+/* A fine inset frame, like the edge of a perfume box. */
+.hero::after {
+    content: "";
+    position: absolute;
+    inset: 18px;
+    border: 1px solid rgba(224, 203, 160, .16);
+    pointer-events: none;
 }
 
 .hero .kicker {
@@ -724,14 +793,16 @@ h3 {
 }
 
 .hero .btn.dark {
-    border-color: var(--gold);
-    background: var(--gold);
+    border-color: transparent;
+    background: var(--gold-sheen);
+    background-size: 200% 100%;
+    color: var(--night);
+    transition: background-position .6s var(--ease), box-shadow .35s var(--ease);
 }
 
 .hero .btn.dark:hover {
-    border-color: #fff;
-    background: #fff;
-    color: var(--ink);
+    background-position: 100% 0;
+    color: var(--night);
 }
 
 .hero .text-link:hover {
@@ -743,20 +814,24 @@ h3 {
     grid-template-columns: 1.1fr .9fr;
     align-items: center;
     gap: 40px;
-    min-height: 640px;
-    padding-top: 64px;
-    padding-bottom: 64px;
+    min-height: min(760px, calc(100vh - 128px));
+    padding-top: 88px;
+    padding-bottom: 88px;
 }
 
 .hero h1 {
-    margin-bottom: 26px;
-    font-size: clamp(52px, 7.2vw, 104px);
+    margin-bottom: 28px;
+    font-size: clamp(52px, 7.2vw, 108px);
+    font-weight: 400;
     line-height: .96;
     letter-spacing: -.025em;
 }
 
 .hero h1 em {
-    color: var(--gold-soft);
+    background: var(--gold-sheen);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
     font-weight: 400;
 }
 
@@ -770,6 +845,21 @@ h3 {
     align-items: center;
     gap: 28px;
     margin-top: 40px;
+}
+
+/* Three short facts under the hero buttons. */
+.hero-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 36px;
+    margin: 56px 0 0;
+    padding: 26px 0 0;
+    border-top: 1px solid rgba(224, 203, 160, .2);
+    color: #a89c87;
+    font-size: 11px;
+    letter-spacing: .24em;
+    list-style: none;
+    text-transform: uppercase;
 }
 
 .hero-art {
@@ -815,8 +905,8 @@ h3 {
 
 /* Moving brand strip under the hero. */
 .marquee {
-    border-bottom: 1px solid var(--line);
-    background: var(--surface);
+    border-top: 1px solid rgba(224, 203, 160, .2);
+    background: var(--night);
     overflow: hidden;
 }
 
@@ -830,16 +920,16 @@ h3 {
 }
 
 .marquee span {
-    color: var(--ink-soft);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: .24em;
+    color: #cdc3b2;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .32em;
     text-transform: uppercase;
     white-space: nowrap;
 }
 
 .marquee i {
-    color: var(--gold);
+    color: var(--gold-soft);
     font-size: 11px;
     font-style: normal;
 }
@@ -882,6 +972,23 @@ h3 {
     overflow: hidden;
 }
 
+/* A hairline frame appears inside tiles and product photos on hover. */
+.collection-tile::after,
+.product-visual::after {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border: 1px solid rgba(255, 255, 255, .55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .5s var(--ease);
+}
+
+.collection-tile:hover::after,
+.product-card:hover .product-visual::after {
+    opacity: 1;
+}
+
 .collection-tile .bottle-art {
     font-size: 17px;
     transition: transform .7s var(--ease);
@@ -903,7 +1010,8 @@ h3 {
 }
 
 .collection-label h3 {
-    font-size: 40px;
+    font-size: 44px;
+    font-weight: 400;
 }
 
 .collection-tile.tone-men {
@@ -930,7 +1038,7 @@ h3 {
 }
 
 .assurances-inner > div {
-    padding: 44px 40px;
+    padding: 56px 40px;
     text-align: center;
 }
 
@@ -939,8 +1047,16 @@ h3 {
 }
 
 .assurances h3 {
-    margin-bottom: 8px;
-    font-size: 26px;
+    margin-bottom: 10px;
+    font-size: 28px;
+}
+
+.assurances h3::before {
+    content: "\2726";
+    display: block;
+    margin-bottom: 14px;
+    color: var(--gold);
+    font: 400 12px/1 var(--body);
 }
 
 .assurances p {
@@ -957,7 +1073,8 @@ h3 {
     grid-template-columns: 1fr 1fr;
     min-height: 500px;
     border-radius: var(--radius);
-    background: #221e1a;
+    background: var(--night);
+    box-shadow: inset 0 0 0 1px rgba(224, 203, 160, .22);
     color: #f3ecdf;
     overflow: hidden;
 }
@@ -965,11 +1082,14 @@ h3 {
 .story-art {
     display: grid;
     place-items: center;
-    background: radial-gradient(circle, #7d6646, #221e1a 64%);
+    background: radial-gradient(circle, #8a6c3a, var(--night) 64%);
 }
 
 .story-art span {
-    color: var(--gold-soft);
+    background: var(--gold-sheen);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
     font: 400 italic 220px/1 var(--display);
 }
 
@@ -999,7 +1119,7 @@ h3 {
 .product-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 40px 28px;
+    gap: 56px 28px;
 }
 
 .product-card {
@@ -1052,12 +1172,12 @@ h3 {
 }
 
 .badge {
-    padding: 5px 11px;
-    border-radius: 999px;
+    padding: 6px 12px;
+    border-radius: var(--radius);
     background: var(--surface);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
-    letter-spacing: .12em;
+    letter-spacing: .2em;
     text-transform: uppercase;
 }
 
@@ -1075,9 +1195,9 @@ h3 {
     border-radius: var(--radius);
     background: var(--ink);
     color: #fff;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: .14em;
+    letter-spacing: .24em;
     text-align: center;
     text-transform: uppercase;
     opacity: 0;
@@ -1092,20 +1212,21 @@ h3 {
 }
 
 .product-meta {
-    padding-top: 18px;
+    padding-top: 22px;
+    text-align: center;
 }
 
 .product-brand {
-    margin-bottom: 4px;
-    color: var(--muted);
-    font-size: 11px;
+    margin-bottom: 8px;
+    color: var(--gold);
+    font-size: 10px;
     font-weight: 600;
-    letter-spacing: .18em;
+    letter-spacing: .28em;
     text-transform: uppercase;
 }
 
 .product-card h3 {
-    font-size: 26px;
+    font-size: 28px;
 }
 
 .product-card h3 a:hover {
@@ -1124,14 +1245,18 @@ h3 {
 .card-foot {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
 }
 
 .price {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 500;
+    letter-spacing: .04em;
 }
 
 .sizes {
@@ -1930,7 +2055,7 @@ h3 {
 
     .nav-wrap {
         gap: 16px;
-        height: 68px;
+        height: 70px;
     }
 
     .nav-toggle {
@@ -1976,7 +2101,7 @@ h3 {
         display: none;
         flex-direction: column;
         gap: 0;
-        max-height: calc(100vh - 68px);
+        max-height: calc(100vh - 70px);
         padding: 12px 24px 28px;
         border-bottom: 1px solid var(--line);
         background: var(--bg);
@@ -2021,8 +2146,16 @@ h3 {
     .hero-inner {
         grid-template-columns: 1fr;
         min-height: 0;
-        padding-top: 56px;
-        padding-bottom: 40px;
+        padding-top: 64px;
+        padding-bottom: 48px;
+    }
+
+    .hero::after {
+        inset: 10px;
+    }
+
+    .hero-facts {
+        margin-top: 40px;
     }
 
     .hero-art {
@@ -2035,7 +2168,7 @@ h3 {
     }
 
     .section {
-        padding: 72px 0;
+        padding: 80px 0;
     }
 
     .assurances + .section {

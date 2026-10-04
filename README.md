@@ -1,12 +1,12 @@
-# FraagranSoul — Django Perfume Store
+# FragranSoul — Django Perfume Store
 
-A clean Django 6 storefront for FraagranSoul. The project is intentionally delivered **without any products**. Products, images, bottle sizes, prices and stock are managed from Django Admin.
+A clean Django 6 storefront for FragranSoul. The project is intentionally delivered **without any products**. Products, images, bottle sizes, prices and stock are managed from Django Admin.
 
 ## Project structure
 
 ```text
-FraagranSoul/
-├── fraagransoul/          # Django project configuration
+FragranSoul/
+├── fragransoul/          # Django project configuration
 ├── store/                 # Store application
 │   ├── admin.py           # Client-friendly Admin configuration
 │   ├── models.py          # Perfumes, categories, bottle-size variants and orders
@@ -92,7 +92,7 @@ python manage.py import_products products_template.csv
 
 Signed-in customers can see their past orders under **Orders**. Guests can check out without an account.
 
-Payment is cash on delivery; no online payment is taken. Shipping is controlled by `FREE_SHIPPING_THRESHOLD` and `SHIPPING_FEE` at the bottom of `fraagransoul/settings.py`.
+Payment is cash on delivery; no online payment is taken. Shipping is controlled by `FREE_SHIPPING_THRESHOLD` and `SHIPPING_FEE` at the bottom of `fragransoul/settings.py`.
 
 ## Running the tests
 
@@ -106,15 +106,15 @@ Set these environment variables on the server; the built-in values are for local
 
 - `DJANGO_SECRET_KEY` — a long random string
 - `DJANGO_DEBUG` — `0`
-- `DJANGO_ALLOWED_HOSTS` — e.g. `fraagransoul.com,www.fraagransoul.com`
-- `DJANGO_CSRF_TRUSTED_ORIGINS` — e.g. `https://fraagransoul.com`
+- `DJANGO_ALLOWED_HOSTS` — e.g. `fragransoul.com,www.fragransoul.com`
+- `DJANGO_CSRF_TRUSTED_ORIGINS` — e.g. `https://fragransoul.com`
 
 Then run `python manage.py collectstatic` and have the web server serve `staticfiles/` and `media/`.
 
 ## Run the project on Windows PowerShell
 
 ```powershell
-cd "D:\one team\FraagranSoul"
+cd "D:\one team\FragranSoul"
 python -m venv venv
 venv\Scripts\Activate.ps1
 pip install -r requirements.txt

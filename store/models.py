@@ -1,4 +1,4 @@
-"""Database models for the FraagranSoul fragrance store.
+"""Database models for the FragranSoul fragrance store.
 
 The important design choice in this file is that a Product represents the
 fragrance itself, while ProductVariant represents a sellable bottle size.
@@ -39,7 +39,7 @@ class Product(models.Model):
 
     name = models.CharField(max_length=150)
     slug = models.SlugField(unique=True)
-    brand = models.CharField(max_length=100, default="FraagranSoul")
+    brand = models.CharField(max_length=100, default="FragranSoul")
     category = models.ForeignKey(
         Category,
         on_delete=models.CASCADE,

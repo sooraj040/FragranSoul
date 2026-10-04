@@ -1,4 +1,4 @@
-"""Views for the FraagranSoul storefront.
+"""Views for the FragranSoul storefront.
 
 The cart stores ProductVariant IDs rather than Product IDs because every
 bottle size can have a different price and stock quantity.

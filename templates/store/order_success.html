@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load store_extras %}
-{% block title %}Order {{ order.order_number }} — FraagranSoul{% endblock %}
+{% block title %}Order {{ order.order_number }} — FragranSoul{% endblock %}
 {% block content %}
 <section class="page-head center">
     <div class="container">
@@ -9,7 +9,7 @@
         {% if order.is_cancelled %}
             <h1>This order was cancelled.</h1>
         {% else %}
-            <h1>Thank you for choosing FraagranSoul.</h1>
+            <h1>Thank you for choosing FragranSoul.</h1>
         {% endif %}
         <p class="lead">Placed on {{ order.created_at|date:"j F Y" }}</p>
     </div>

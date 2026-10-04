@@ -407,7 +407,7 @@ class DashboardTests(StoreTestCase):
         self.sign_in()
         data = {
             "name": "Rose Smoke",
-            "brand": "FraagranSoul",
+            "brand": "FragranSoul",
             "gender": "women",
             "category": self.category.pk,
             "description": "Rose over smoke.",
@@ -429,7 +429,7 @@ class DashboardTests(StoreTestCase):
 
     def test_perfume_needs_a_size_and_sizes_must_differ(self):
         self.sign_in()
-        base = {"name": "No Size", "brand": "FraagranSoul", "gender": "men", "category": self.category.pk, "description": "x"}
+        base = {"name": "No Size", "brand": "FragranSoul", "gender": "men", "category": self.category.pk, "description": "x"}
 
         no_sizes = dict(base, **self.size_data([{"volume_ml": "", "price": "", "old_price": "", "stock": ""}]))
         self.assertEqual(self.client.post(reverse("store:dashboard_product_add"), no_sizes).status_code, 200)
@@ -445,7 +445,7 @@ class DashboardTests(StoreTestCase):
         self.sign_in()
         data = {
             "name": "Test Oud Intense",
-            "brand": "FraagranSoul",
+            "brand": "FragranSoul",
             "gender": "men",
             "category": self.category.pk,
             "description": "Deeper.",
@@ -507,7 +507,7 @@ class ImportProductsTests(TestCase):
         )
         self.run_import(body)
         product = Product.objects.get(slug="amber-night")
-        self.assertEqual(product.brand, "FraagranSoul")
+        self.assertEqual(product.brand, "FragranSoul")
         self.assertTrue(product.is_featured)
         self.assertEqual(product.variants.count(), 2)
         self.assertEqual(product.gender, "unisex")

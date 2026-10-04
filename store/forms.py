@@ -1,4 +1,4 @@
-"""Forms used by the FraagranSoul storefront and staff dashboard."""
+"""Forms used by the FragranSoul storefront and staff dashboard."""
 
 import re
 

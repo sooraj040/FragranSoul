@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load store_extras %}
-{% block title %}{{ product.name }} — FraagranSoul{% endblock %}
+{% block title %}{{ product.name }} — FragranSoul{% endblock %}
 {% block content %}
 <div class="container">
     <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -20,7 +20,7 @@
                 <div class="bottle-art bottle-large">
                     <i class="bottle-cap"></i>
                     <i class="bottle-neck"></i>
-                    <div class="bottle-body"><span>FraagranSoul<small>{{ product.name }}</small></span></div>
+                    <div class="bottle-body"><span>FragranSoul<small>{{ product.name }}</small></span></div>
                 </div>
             {% endif %}
             {% if product.is_new %}<span class="badges"><span class="badge">New</span></span>{% endif %}

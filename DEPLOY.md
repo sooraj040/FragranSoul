@@ -1,4 +1,4 @@
-# Putting FraagranSoul live on fragransoul.in (PythonAnywhere)
+# Putting FragranSoul live on fragransoul.in (PythonAnywhere)
 
 This guide takes the site from your computer to `https://www.fragransoul.in`.
 Do the steps in order. Wherever you see `USERNAME`, type your PythonAnywhere username.
@@ -8,20 +8,20 @@ different from what is written here, look for the closest match on the same page
 
 ## What you need
 
-- The file `fraagransoul_deploy.zip` (in the `FraagranSoul_client_ready` folder).
+- The file `fragransoul_deploy.zip` (in the `FragranSoul_client_ready` folder).
 - A PythonAnywhere account on a **paid plan**. The free plan cannot use your own domain.
 - Access to the DNS settings of `fragransoul.in` at your domain provider.
 
 ## 1. Upload the project
 
 1. Sign in at pythonanywhere.com and open the **Files** tab.
-2. Upload `fraagransoul_deploy.zip` into `/home/USERNAME/`.
+2. Upload `fragransoul_deploy.zip` into `/home/USERNAME/`.
 3. Open the **Consoles** tab and start a **Bash** console. Run:
 
 ```bash
 cd ~
-unzip fraagransoul_deploy.zip
-ls FraagranSoul        # you should see manage.py
+unzip fragransoul_deploy.zip
+ls FragranSoul        # you should see manage.py
 ```
 
 ## 2. Install Python packages
@@ -29,8 +29,8 @@ ls FraagranSoul        # you should see manage.py
 In the same Bash console:
 
 ```bash
-mkvirtualenv fraagransoul --python=python3.13
-cd ~/FraagranSoul
+mkvirtualenv fragransoul --python=python3.13
+cd ~/FragranSoul
 pip install -r requirements.txt
 ```
 
@@ -39,7 +39,7 @@ If `python3.13` is not available, use `python3.12`. Django 6 needs Python 3.12 o
 ## 3. Create the settings file
 
 ```bash
-cd ~/FraagranSoul
+cd ~/FragranSoul
 cp .env.example .env
 python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"
 nano .env
@@ -67,20 +67,20 @@ empty database: no perfumes, no orders.
 2. For the domain, enter `www.fragransoul.in`.
 3. Choose **Manual configuration** (not "Django"), then the same Python version as in step 2.
 4. On the web app page, fill in:
-   - **Source code:** `/home/USERNAME/FraagranSoul`
-   - **Working directory:** `/home/USERNAME/FraagranSoul`
-   - **Virtualenv:** `/home/USERNAME/.virtualenvs/fraagransoul`
+   - **Source code:** `/home/USERNAME/FragranSoul`
+   - **Working directory:** `/home/USERNAME/FragranSoul`
+   - **Virtualenv:** `/home/USERNAME/.virtualenvs/fragransoul`
 5. Click the **WSGI configuration file** link. Delete everything in it and paste:
 
 ```python
 import os
 import sys
 
-path = "/home/USERNAME/FraagranSoul"
+path = "/home/USERNAME/FragranSoul"
 if path not in sys.path:
     sys.path.insert(0, path)
 
-os.environ["DJANGO_SETTINGS_MODULE"] = "fraagransoul.settings"
+os.environ["DJANGO_SETTINGS_MODULE"] = "fragransoul.settings"
 
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
@@ -92,8 +92,8 @@ application = get_wsgi_application()
 
 | URL        | Directory                                  |
 |------------|--------------------------------------------|
-| `/static/` | `/home/USERNAME/FraagranSoul/staticfiles`  |
-| `/media/`  | `/home/USERNAME/FraagranSoul/media`        |
+| `/static/` | `/home/USERNAME/FragranSoul/staticfiles`  |
+| `/media/`  | `/home/USERNAME/FragranSoul/media`        |
 
 7. Click the green **Reload** button.
 
@@ -139,8 +139,8 @@ Sign-in only works over HTTPS on the live site, so do this step before testing a
 Upload the changed files (or a new zip, unzipped over the old folder), then in a Bash console:
 
 ```bash
-workon fraagransoul
-cd ~/FraagranSoul
+workon fragransoul
+cd ~/FragranSoul
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py collectstatic --noinput
@@ -152,8 +152,8 @@ and click **Reload** on the Web tab. Do not overwrite `db.sqlite3`, `media/` or
 ## Backups
 
 Everything that matters is in two places on the server: the file
-`~/FraagranSoul/db.sqlite3` (perfumes, orders, accounts) and the folder
-`~/FraagranSoul/media/` (photos). Download both from the **Files** tab regularly.
+`~/FragranSoul/db.sqlite3` (perfumes, orders, accounts) and the folder
+`~/FragranSoul/media/` (photos). Download both from the **Files** tab regularly.
 
 ## If something goes wrong
 

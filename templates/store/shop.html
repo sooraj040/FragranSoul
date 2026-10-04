@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}{% if gender_label %}{{ gender_label }} Perfumes{% else %}All Perfumes{% endif %} — FraagranSoul{% endblock %}
+{% block title %}{% if gender_label %}{{ gender_label }} Perfumes{% else %}All Perfumes{% endif %} — FragranSoul{% endblock %}
 {% block content %}
 <section class="page-head">
     <div class="container">
         <p class="kicker">The collection</p>
         <h1>{% if gender == 'men' %}For men{% elif gender == 'women' %}For women{% elif gender == 'unisex' %}Unisex{% else %}All perfumes{% endif %}</h1>
-        <p class="lead">Explore the FraagranSoul fragrance collection.</p>
+        <p class="lead">Explore the FragranSoul fragrance collection.</p>
     </div>
 </section>
 

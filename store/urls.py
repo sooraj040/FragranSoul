@@ -1,4 +1,4 @@
-"""Public URL routes for the FraagranSoul storefront."""
+"""Public URL routes for the FragranSoul storefront."""
 
 from django.urls import path
 

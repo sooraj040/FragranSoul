@@ -1,4 +1,4 @@
-// Small enhancements for the FraagranSoul storefront.
+// Small enhancements for the FragranSoul storefront.
 // Every page works without this file; it only makes things smoother.
 
 document.documentElement.classList.add("js");

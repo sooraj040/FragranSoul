@@ -1,4 +1,4 @@
-"""Template helpers for the FraagranSoul storefront."""
+"""Template helpers for the FragranSoul storefront."""
 
 from decimal import Decimal
 
