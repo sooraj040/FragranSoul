@@ -50,6 +50,7 @@ if (navToggle) {
 }
 
 // ---- Message bar: its lines take turns ----
+// The current line slides out upwards while the next slides in from below.
 document.querySelectorAll("[data-banner]").forEach((banner) => {
     const lines = Array.from(banner.children);
     if (lines.length < 2) {
@@ -57,69 +58,148 @@ document.querySelectorAll("[data-banner]").forEach((banner) => {
     }
     let showing = 0;
     setInterval(() => {
-        lines[showing].classList.remove("is-on");
+        const leaving = lines[showing];
+        leaving.classList.remove("is-on");
+        leaving.classList.add("is-off");
+        setTimeout(() => leaving.classList.remove("is-off"), 700);
         showing = (showing + 1) % lines.length;
         lines[showing].classList.add("is-on");
     }, 5000);
 });
 
+// ---- Header: a soft shadow once the page has scrolled under it ----
+const siteHeader = document.querySelector(".site-header");
+
+if (siteHeader) {
+    const markStuck = () => siteHeader.classList.toggle("is-stuck", window.scrollY > 31);
+    window.addEventListener("scroll", markStuck, { passive: true });
+    markStuck();
+}
+
+// ---- Search box: the hint types itself ----
+// Runs only while the box is empty and not in use.
+const searchInput = document.querySelector(".head-search input");
+
+if (searchInput && !prefersReducedMotion) {
+    const hints = ["Search for perfumes", "Search for notes", "Search for families"];
+    let hint = 0;
+    let length = hints[0].length;
+    let erasing = true;
+
+    function typeHint() {
+        let wait = erasing ? 35 : 75;
+        if (document.activeElement !== searchInput && !searchInput.value) {
+            length += erasing ? -1 : 1;
+            const stem = "Search for ".length;
+            if (erasing && length <= stem) {
+                erasing = false;
+                hint = (hint + 1) % hints.length;
+            } else if (!erasing && length >= hints[hint].length) {
+                erasing = true;
+                wait = 2400;
+            }
+            searchInput.placeholder = hints[hint].slice(0, length);
+        }
+        setTimeout(typeHint, wait);
+    }
+
+    setTimeout(typeHint, 2400);
+}
+
 // ---- Home slider ----
-// Slides cross-fade on their own every few seconds. Pointing at (or tabbing
-// to) a caption brings up its slide, and on touch screens a sideways swipe
-// moves between them.
+// Slides cross-fade. The line under the current caption fills as a timer and
+// the slider moves on when it completes; hovering pauses it. Pointing at (or
+// tabbing to) a caption brings up its slide, the arrow keys step through, and
+// on touch screens a sideways swipe does the same. Each caption's description
+// is typed out as its slide appears.
 document.querySelectorAll("[data-slider]").forEach((slider) => {
-    const groups = [
-        Array.from(slider.querySelectorAll("[data-slide]")),
-        Array.from(slider.querySelectorAll("[data-slide-tab]")),
-        Array.from(slider.querySelectorAll(".slide-dots i")),
-    ];
-    const count = groups[0].length;
+    const slides = Array.from(slider.querySelectorAll("[data-slide]"));
+    const tabs = Array.from(slider.querySelectorAll("[data-slide-tab]"));
+    const dots = Array.from(slider.querySelectorAll(".slide-dots i"));
+    const count = slides.length;
     if (count < 2) {
         return;
     }
 
     let current = 0;
-    let timer = null;
+    let typing = null;
+
+    // Keep the full sentence for assistive technology and for retyping.
+    const sentences = tabs.map((tab) => {
+        const line = tab.querySelector("span");
+        const text = line.textContent;
+        tab.setAttribute("aria-label", tab.querySelector(".slide-title").textContent + ". " + text);
+        return { line, text };
+    });
+
+    function typeOut(index) {
+        clearInterval(typing);
+        sentences.forEach((sentence) => {
+            sentence.line.textContent = sentence.text;
+        });
+        if (prefersReducedMotion) {
+            return;
+        }
+        const { line, text } = sentences[index];
+        // Hold the caption's height so nothing jumps while it types.
+        line.style.minHeight = line.offsetHeight + "px";
+        let shown = 0;
+        line.textContent = "";
+        typing = setInterval(() => {
+            shown += 1;
+            line.textContent = text.slice(0, shown);
+            if (shown >= text.length) {
+                clearInterval(typing);
+            }
+        }, 28);
+    }
 
     function show(index) {
-        current = (index + count) % count;
-        groups.forEach((group) => {
+        const next = (index + count) % count;
+        if (next === current) {
+            return;
+        }
+        current = next;
+        [slides, tabs, dots].forEach((group) => {
             group.forEach((item, position) => item.classList.toggle("is-on", position === current));
         });
+        typeOut(current);
     }
 
-    function stop() {
-        clearInterval(timer);
-    }
-
-    function play() {
-        stop();
-        if (!prefersReducedMotion) {
-            timer = setInterval(() => show(current + 1), 6000);
-        }
-    }
-
-    groups[1].forEach((tab, index) => {
+    tabs.forEach((tab, index) => {
         tab.addEventListener("mouseenter", () => show(index));
         tab.addEventListener("focus", () => show(index));
+        // The timer line is the caption's ::after; when it fills, move on.
+        tab.addEventListener("animationend", (event) => {
+            if (event.animationName === "slide-timer") {
+                show(current + 1);
+            }
+        });
     });
-    slider.addEventListener("mouseenter", stop);
-    slider.addEventListener("mouseleave", play);
+
+    document.addEventListener("keydown", (event) => {
+        if (event.target.closest("input, textarea, select")) {
+            return;
+        }
+        if (event.key === "ArrowRight") {
+            show(current + 1);
+        } else if (event.key === "ArrowLeft") {
+            show(current - 1);
+        }
+    });
 
     let touchStart = null;
     slider.addEventListener("touchstart", (event) => {
         touchStart = event.touches[0].clientX;
-        stop();
     }, { passive: true });
     slider.addEventListener("touchend", (event) => {
         const moved = event.changedTouches[0].clientX - touchStart;
         if (Math.abs(moved) > 50) {
             show(current + (moved < 0 ? 1 : -1));
         }
-        play();
     }, { passive: true });
 
-    play();
+    typeOut(0);
 });
 
 // ---- Toast messages fade out on their own ----

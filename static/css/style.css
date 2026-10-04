@@ -562,7 +562,8 @@ h3 {
 
 /* ---------- 3. Header and footer ---------- */
 
-/* Message bar: the lines are stacked and fade in turn. */
+/* Message bar: the lines are stacked; each slides in from below and leaves
+   upwards ("is-off" is set by main.js on the line that is leaving). */
 .top-banner {
     position: relative;
     height: 31px;
@@ -581,11 +582,17 @@ h3 {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: opacity .6s;
+    transform: translateY(100%);
+    transition: transform .6s var(--ease), opacity .6s;
 }
 
 .top-banner span.is-on {
     opacity: 1;
+    transform: none;
+}
+
+.top-banner span.is-off {
+    transform: translateY(-100%);
 }
 
 /* Header: a grid of cells divided by hairlines.
@@ -600,6 +607,11 @@ h3 {
     grid-template-rows: 42px 38px;
     border-bottom: 1px solid var(--line);
     background: var(--surface);
+    transition: box-shadow .3s;
+}
+
+.site-header.is-stuck {
+    box-shadow: 0 10px 30px -18px rgba(0, 0, 0, .35);
 }
 
 .brand {
@@ -702,19 +714,37 @@ h3 {
 }
 
 .head-nav a {
-    padding: 4px 0 2px;
-    border-bottom: 2px solid transparent;
+    position: relative;
+    padding: 6px 0;
     color: var(--ink-soft);
     font: 700 14px/1 var(--display);
     letter-spacing: .04em;
     text-transform: uppercase;
     white-space: nowrap;
-    transition: border-color .2s, color .2s;
+    transition: color .2s;
+}
+
+/* The underline draws in from the left and leaves to the right. */
+.head-nav a::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform .35s var(--ease);
 }
 
 .head-nav a:hover {
-    border-bottom-color: currentColor;
     color: var(--ink);
+}
+
+.head-nav a:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
 }
 
 .head-bag {
@@ -881,6 +911,10 @@ main:has(.slider) + .site-footer {
         border-bottom: 1px solid var(--line);
     }
 
+    .head-nav a::after {
+        display: none;
+    }
+
     .nav-open .head-icons {
         display: flex;
         grid-row: 4;
@@ -960,15 +994,21 @@ main:has(.slider) + .site-footer {
     object-fit: cover;
 }
 
-/* The picture eases closer for as long as its slide is showing. */
+/* The picture eases closer for as long as its slide is showing, and the
+   drawn bottle rises into place as its slide arrives. */
 .slide img,
 .slide .bottle-art {
-    transition: transform 8s linear;
+    transition: transform 8s linear, translate 1.4s var(--ease);
+}
+
+.slide .bottle-art {
+    translate: 0 36px;
 }
 
 .slide.is-on img,
 .slide.is-on .bottle-art {
     transform: scale(1.06);
+    translate: 0 0;
 }
 
 .slide .bottle-art {
@@ -1025,6 +1065,37 @@ main:has(.slider) + .site-footer {
 
 .slide-tab.is-on em {
     display: inline-block;
+}
+
+/* A line under the current caption fills as a timer; main.js moves to the
+   next slide when it completes. Hovering the slider pauses it. */
+.slide-tab::after {
+    content: "";
+    display: block;
+    height: 1px;
+    margin-top: 14px;
+    background: #fff;
+    transform: scaleX(0);
+    transform-origin: left;
+}
+
+.slide-tab.is-on::after {
+    animation: slide-timer 6s linear forwards;
+}
+
+.slider:hover .slide-tab::after {
+    animation-play-state: paused;
+}
+
+@keyframes slide-timer {
+    to {
+        transform: scaleX(1);
+    }
+}
+
+/* The title of the arriving caption lifts into place. */
+.slide-tab.is-on .slide-title {
+    animation: rise .7s var(--ease) backwards;
 }
 
 .slide-dots {
@@ -1181,6 +1252,30 @@ main:has(.slider) + .site-footer {
 
 .price {
     white-space: nowrap;
+}
+
+/* On hover the picture dims a little and the bottom row turns black. */
+.product-visual::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .4s;
+}
+
+.product-card:hover .product-visual::after {
+    opacity: .14;
+}
+
+.card-foot {
+    transition: background .3s, color .3s;
+}
+
+.product-card:hover .card-foot {
+    background: var(--ink);
+    color: #fff;
 }
 
 /* ---------- 6. Shop ---------- */
