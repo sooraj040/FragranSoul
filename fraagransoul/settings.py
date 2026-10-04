@@ -20,14 +20,31 @@ def load_env_file(path):
             os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
+def env_list(name, default=''):
+    """Split a comma-separated environment variable into a clean list."""
+    return [item.strip() for item in os.environ.get(name, default).split(',') if item.strip()]
+
+
 load_env_file(BASE_DIR / '.env')
+
+# Vercel sets VERCEL=1 in every deployment. When running there, default to
+# production-safe values so a missing environment variable can't switch on
+# debug mode or reject every request.
+ON_VERCEL = os.environ.get('VERCEL') == '1'
 
 # Production values come from environment variables; the fallbacks below are
 # for local development only.
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fraagransoul-dev-key-change-in-production')
-DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()]
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
+DEBUG = os.environ.get('DJANGO_DEBUG', '0' if ON_VERCEL else '1') == '1'
+
+ALLOWED_HOSTS = env_list(
+    'DJANGO_ALLOWED_HOSTS',
+    '.vercel.app' if ON_VERCEL else 'localhost,127.0.0.1',
+)
+CSRF_TRUSTED_ORIGINS = env_list(
+    'DJANGO_CSRF_TRUSTED_ORIGINS',
+    'https://*.vercel.app' if ON_VERCEL else '',
+)
 
 INSTALLED_APPS = [
     'django.contrib.admin', 'django.contrib.auth', 'django.contrib.contenttypes',
@@ -36,7 +53,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware', 'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.security.SecurityMiddleware', 'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware', 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware', 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -51,7 +69,16 @@ TEMPLATES = [{
     ]},
 }]
 WSGI_APPLICATION = 'fraagransoul.wsgi.application'
-DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': BASE_DIR / 'db.sqlite3'}}
+
+# Use a hosted database when DATABASE_URL is set (needed on Vercel, whose
+# filesystem is read-only); otherwise fall back to local SQLite.
+if os.environ.get('DATABASE_URL'):
+    import dj_database_url
+
+    DATABASES = {'default': dj_database_url.config(conn_max_age=600, ssl_require=not DEBUG)}
+else:
+    DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': BASE_DIR / 'db.sqlite3'}}
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -65,6 +92,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+WHITENOISE_USE_FINDERS = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
