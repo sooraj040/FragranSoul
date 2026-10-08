@@ -172,7 +172,12 @@ class Order(models.Model):
     ]
     PAYMENT_CHOICES = [
         ("cod", "Cash on delivery"),
+        ("upi", "UPI"),
+        ("netbanking", "Net banking"),
+        ("card", "Credit / debit card"),
     ]
+    # Methods paid at checkout through the payment gateway.
+    ONLINE_METHODS = {"upi", "netbanking", "card"}
     # The normal path of an order, used for the progress tracker.
     STATUS_STEPS = ["pending", "confirmed", "shipped", "delivered"]
 
@@ -199,6 +204,13 @@ class Order(models.Model):
 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     payment_method = models.CharField(max_length=10, choices=PAYMENT_CHOICES, default="cod")
+    paid_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Set when an online payment is confirmed. Empty for cash on delivery.",
+    )
+    gateway_order_id = models.CharField(max_length=40, blank=True, editable=False)
+    gateway_payment_id = models.CharField(max_length=40, blank=True, editable=False)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     shipping = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2)
@@ -217,6 +229,29 @@ class Order(models.Model):
     @property
     def is_cancelled(self):
         return self.status == "cancelled"
+
+    @property
+    def is_online(self):
+        """True when the customer chose to pay online rather than on delivery."""
+        return self.payment_method in self.ONLINE_METHODS
+
+    @property
+    def is_paid(self):
+        return self.paid_at is not None
+
+    @property
+    def awaiting_payment(self):
+        """An online order whose payment has not gone through yet."""
+        return self.is_online and not self.is_paid and not self.is_cancelled
+
+    @property
+    def payment_state(self):
+        """A short description of where the money stands."""
+        if self.is_paid:
+            return "Paid online"
+        if self.is_online:
+            return "Awaiting payment"
+        return "Pay on delivery"
 
     @property
     def item_count(self):

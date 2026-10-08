@@ -18,6 +18,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import CategoryForm, ProductForm, VariantFormSet
 from .models import Category, Order, Product, ProductVariant
+from .views import settle_payment
 
 LOW_STOCK_LEVEL = 3
 
@@ -117,6 +118,8 @@ def order(request, order_number):
 
         return redirect("store:dashboard_order", order_number=order.order_number)
 
+    # Picks up a payment the customer's browser never reported back.
+    settle_payment(order)
     return render(
         request,
         "dashboard/order_detail.html",

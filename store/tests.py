@@ -529,3 +529,143 @@ class ImportProductsTests(TestCase):
         with self.assertRaisesMessage(CommandError, "Line 3"):
             self.run_import("Amber Night,Amber,,,,10,349,,15,,,\nRose,Floral,,,,ten,349,,15,,,\n")
         self.assertEqual(Product.objects.count(), 0)
+
+
+class PaymentTests(StoreTestCase):
+    def order_with(self, method):
+        self.add(self.small)
+        response = self.client.post(reverse("store:checkout"), {**DELIVERY, "payment_method": method})
+        return response, Order.objects.first()
+
+    def test_checkout_offers_every_method_and_cash_is_paid_on_delivery(self):
+        self.add(self.small)
+        page = self.client.get(reverse("store:checkout"))
+        for label in ("Cash on delivery", "UPI", "Net banking", "Credit / debit card"):
+            self.assertContains(page, label)
+
+        response, order = self.order_with("cod")
+        self.assertRedirects(response, order.get_absolute_url())
+        self.assertEqual(order.payment_state, "Pay on delivery")
+        # Cash orders have nothing to pay online.
+        self.assertRedirects(self.client.get(reverse("store:pay", args=[order.order_number])), order.get_absolute_url())
+
+    # The live site runs with DEBUG off, which leaves PAYMENTS_SANDBOX off too.
+    @override_settings(PAYMENTS_SANDBOX=False)
+    def test_online_methods_are_refused_without_a_gateway(self):
+        response, order = self.order_with("card")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Online payment is not available yet")
+        self.assertIsNone(order)
+
+    @override_settings(PAYMENTS_SANDBOX=True)
+    def test_test_payment_page_marks_the_order_paid(self):
+        response, order = self.order_with("upi")
+        pay = reverse("store:pay", args=[order.order_number])
+        self.assertRedirects(response, pay)
+        self.assertContains(self.client.get(pay), "Test payment")
+        self.assertContains(self.client.get(order.get_absolute_url()), "waiting for payment")
+
+        test = reverse("store:pay_sandbox", args=[order.order_number])
+        self.assertRedirects(self.client.post(test, {"result": "failure"}), pay)
+        order.refresh_from_db()
+        self.assertFalse(order.is_paid)
+
+        self.assertRedirects(self.client.post(test, {"result": "success"}), order.get_absolute_url())
+        order.refresh_from_db()
+        self.assertTrue(order.is_paid)
+        self.assertEqual(order.status, "confirmed")
+        self.assertEqual(order.payment_state, "Paid online")
+
+    def test_test_payment_is_never_available_on_the_live_site(self):
+        with override_settings(PAYMENTS_SANDBOX=True):
+            _, order = self.order_with("card")
+        url = reverse("store:pay_sandbox", args=[order.order_number])
+        with override_settings(PAYMENTS_SANDBOX=False):
+            self.assertEqual(self.client.post(url, {"result": "success"}).status_code, 404)
+        order.refresh_from_db()
+        self.assertFalse(order.is_paid)
+
+    @override_settings(RAZORPAY_KEY_ID="rzp_test_key", RAZORPAY_KEY_SECRET="test-secret", PAYMENTS_SANDBOX=False)
+    def test_gateway_payment_needs_a_genuine_signature(self):
+        import hashlib
+        import hmac
+        from unittest import mock
+
+        response, order = self.order_with("netbanking")
+        pay = reverse("store:pay", args=[order.order_number])
+        self.assertRedirects(response, pay, fetch_redirect_response=False)
+
+        with mock.patch("store.payments.create_gateway_order", return_value="order_ABC123"):
+            page = self.client.get(pay)
+        self.assertContains(page, "order_ABC123")
+        self.assertContains(page, "rzp_test_key")
+        self.assertNotContains(page, "test-secret")
+
+        confirm = reverse("store:pay_confirm", args=[order.order_number])
+        forged = {"razorpay_order_id": "order_ABC123", "razorpay_payment_id": "pay_1", "razorpay_signature": "nope"}
+        # Razorpay has no payment for the order, so the forgery is refused.
+        with mock.patch("store.payments.captured_payment_id", return_value=None):
+            self.assertRedirects(self.client.post(confirm, forged), pay, fetch_redirect_response=False)
+        order.refresh_from_db()
+        self.assertFalse(order.is_paid)
+
+        signature = hmac.new(b"test-secret", b"order_ABC123|pay_1", hashlib.sha256).hexdigest()
+        self.assertRedirects(self.client.post(confirm, {**forged, "razorpay_signature": signature}), order.get_absolute_url())
+        order.refresh_from_db()
+        self.assertTrue(order.is_paid)
+        self.assertEqual(order.gateway_payment_id, "pay_1")
+
+    @override_settings(RAZORPAY_KEY_ID="rzp_test_key", RAZORPAY_KEY_SECRET="test-secret", PAYMENTS_SANDBOX=False)
+    def test_payment_the_browser_never_reported_is_picked_up(self):
+        from unittest import mock
+
+        _, order = self.order_with("upi")
+        pay = reverse("store:pay", args=[order.order_number])
+        with mock.patch("store.payments.create_gateway_order", return_value="order_ABC123"),                 mock.patch("store.payments.captured_payment_id", return_value=None):
+            self.client.get(pay)
+            # Nothing has been paid yet, so the order is still waiting.
+            self.assertContains(self.client.get(order.get_absolute_url()), "waiting for payment")
+
+        # The customer paid in their UPI app and only later reopened the order.
+        with mock.patch("store.payments.captured_payment_id", return_value="pay_9") as check:
+            self.assertContains(self.client.get(order.get_absolute_url()), "Paid online")
+            order.refresh_from_db()
+            self.assertEqual((order.status, order.gateway_payment_id), ("confirmed", "pay_9"))
+            # A paid order is not asked about again, and cannot be paid twice.
+            check.reset_mock()
+            self.assertRedirects(self.client.get(pay), order.get_absolute_url())
+            check.assert_not_called()
+
+    @override_settings(RAZORPAY_KEY_ID="rzp_test_key", RAZORPAY_KEY_SECRET="test-secret", PAYMENTS_SANDBOX=False)
+    def test_an_unreachable_gateway_leaves_the_order_waiting(self):
+        from unittest import mock
+
+        from store import payments
+
+        _, order = self.order_with("card")
+        Order.objects.filter(pk=order.pk).update(gateway_order_id="order_ABC123")
+        with mock.patch("store.payments.captured_payment_id", side_effect=payments.PaymentError("down")):
+            self.assertContains(self.client.get(order.get_absolute_url()), "waiting for payment")
+
+    @override_settings(PAYMENTS_SANDBOX=True)
+    def test_a_payment_reported_twice_is_recorded_once(self):
+        from store.views import mark_paid
+
+        _, order = self.order_with("upi")
+        self.assertTrue(mark_paid(order, "pay_1"))
+        self.assertFalse(mark_paid(order, "pay_2"))
+        self.assertEqual(order.gateway_payment_id, "pay_1")
+
+        # A cancelled order is never marked paid.
+        _, cancelled = self.order_with("upi")
+        cancelled.cancel_and_restock()
+        self.assertFalse(mark_paid(cancelled, "pay_3"))
+        self.assertFalse(cancelled.is_paid)
+
+    @override_settings(PAYMENTS_SANDBOX=True)
+    def test_other_visitors_cannot_pay_or_view_someone_elses_order(self):
+        _, order = self.order_with("card")
+        self.client.session.flush()
+        other = self.client_class()
+        self.assertEqual(other.get(reverse("store:pay", args=[order.order_number])).status_code, 404)
+        self.assertEqual(other.post(reverse("store:pay_sandbox", args=[order.order_number]), {"result": "success"}).status_code, 404)

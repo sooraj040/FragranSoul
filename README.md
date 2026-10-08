@@ -92,7 +92,7 @@ python manage.py import_products products_template.csv
 
 Signed-in customers can see their past orders under **Orders**. Guests can check out without an account.
 
-Payment is cash on delivery; no online payment is taken. Shipping is controlled by `FREE_SHIPPING_THRESHOLD` and `SHIPPING_FEE` at the bottom of `fragransoul/settings.py`.
+Customers choose a payment method at checkout: cash on delivery, UPI, net banking or a credit / debit card. The three online methods go through Razorpay and are switched off until `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` are set (see `store/payments.py`). On a developer machine without keys, a clearly marked test payment page stands in so the flow can be tried; it is never used on the live site. Shipping is controlled by `FREE_SHIPPING_THRESHOLD` and `SHIPPING_FEE` at the bottom of `fragransoul/settings.py`.
 
 ## Running the tests
 

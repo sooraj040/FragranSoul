@@ -31,7 +31,7 @@
                 <tfoot>
                     <tr><td colspan="3">Subtotal</td><td class="num">{{ order.subtotal|rupees }}</td></tr>
                     <tr><td colspan="3">Shipping</td><td class="num">{% if order.shipping %}{{ order.shipping|rupees }}{% else %}Complimentary{% endif %}</td></tr>
-                    <tr class="total"><td colspan="3">Total · {{ order.get_payment_method_display }}</td><td class="num">{{ order.total|rupees }}</td></tr>
+                    <tr class="total"><td colspan="3">Total · {{ order.get_payment_method_display }} · {{ order.payment_state }}</td><td class="num">{{ order.total|rupees }}</td></tr>
                 </tfoot>
             </table>
         </div>

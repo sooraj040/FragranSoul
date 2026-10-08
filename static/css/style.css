@@ -11,18 +11,25 @@
 
 /* ---------- 1. Tokens and base ---------- */
 :root {
-    --bg: #f6f8f6;
-    --surface: #ffffff;
-    --sand: #eceeec;
-    --sand-deep: #dfe2df;
-    --ink: #111111;
-    --ink-soft: #333333;
+    /* Palette: black, white and cobalt blue. The "gold" names are the accent
+       slots used throughout the file; they now point at cobalt. */
+    --black: #0a0a0a;
+    --white: #ffffff;
+    --cobalt: #0047ab;
+    --cobalt-soft: #a9c1ec;
+
+    --bg: #fafafa;
+    --surface: var(--white);
+    --sand: #f0f0f0;
+    --sand-deep: #e2e2e2;
+    --ink: var(--black);
+    --ink-soft: #2e2e2e;
     --muted: #767676;
-    --line: #dcdedc;
-    --gold: #595959;
-    --gold-soft: #bdbdbd;
-    --gold-sheen: linear-gradient(100deg, #8f6c2e 0%, #e9d5a4 45%, #b8924a 70%, #8f6c2e 100%);
-    --night: #161616;
+    --line: #dedede;
+    --gold: var(--cobalt);
+    --gold-soft: var(--cobalt-soft);
+    --gold-sheen: linear-gradient(100deg, #003380 0%, #a9c1ec 45%, #2f6fd6 70%, #003380 100%);
+    --night: var(--black);
     --ease-reveal: cubic-bezier(.16, 1, .3, 1);
     --ease-editorial: cubic-bezier(.65, .05, .36, 1);
     --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -569,7 +576,7 @@ h3 {
 .top-banner {
     position: relative;
     height: 31px;
-    background: #595959;
+    background: var(--cobalt);
     color: #fff;
     font: 700 13px/31px var(--mono);
     text-align: center;
@@ -704,6 +711,40 @@ h3 {
     display: none;
 }
 
+/* Sound button: four bars that dance while sound is on. */
+.sound-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 13px;
+}
+
+.sound-bars i {
+    width: 2px;
+    height: 100%;
+    background: currentColor;
+    transform: scaleY(.2);
+    transform-origin: bottom;
+}
+
+.sound-toggle[aria-pressed="true"] .sound-bars i {
+    animation: sound-eq 1s ease-in-out infinite;
+}
+
+.sound-bars i:nth-child(2) { animation-delay: -.35s !important; }
+.sound-bars i:nth-child(3) { animation-delay: -.7s !important; }
+.sound-bars i:nth-child(4) { animation-delay: -.2s !important; }
+
+.sound-toggle[hidden] {
+    display: none;
+}
+
+@keyframes sound-eq {
+    50% {
+        transform: scaleY(1);
+    }
+}
+
 .head-nav {
     display: flex;
     grid-column: 2 / 4;
@@ -767,7 +808,7 @@ h3 {
     margin: 96px 16px 0;
     border: 1px solid var(--line);
     border-bottom: 0;
-    background: #f9faf9;
+    background: var(--bg);
 }
 
 /* The home slider runs straight into the footer. */
@@ -1770,18 +1811,67 @@ main:has(.slider) + .site-footer {
     text-align: center;
 }
 
-.pay-option {
+/* Payment choices: one bordered row per method, the chosen one outlined. */
+.pay-options {
     display: grid;
-    gap: 4px;
-    padding: 18px 20px;
-    border: 1px solid var(--ink);
-    border-radius: var(--radius);
+    gap: 10px;
+}
+
+.panel .pay-option {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 14px;
+    margin: 0;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
     background: var(--bg);
+    font-size: 15px;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+}
+
+.panel .pay-option:has(input:checked) {
+    border-color: var(--ink);
+    background: var(--surface);
+}
+
+.panel .pay-option input {
+    display: inline-block;
+    grid-row: 1 / 3;
+    width: 16px;
+    height: 16px;
+    margin: 3px 0 0;
+    padding: 0;
+    accent-color: var(--ink);
 }
 
 .pay-option span {
     color: var(--ink-soft);
-    font-size: 14px;
+    font: 400 13px/1.4 var(--mono);
+}
+
+.pay-option.is-off {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* The payment page. */
+.pay-box {
+    text-align: center;
+}
+
+.pay-note {
+    max-width: 520px;
+    margin: 0 auto 24px;
+    color: var(--ink-soft);
+    font: 400 14px/1.6 var(--mono);
+}
+
+.pay-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
 }
 
 /* ---------- 9. Forms and account ---------- */
@@ -2841,10 +2931,10 @@ main:has(.slider) {
 }
 
 .cursor.is-label {
-    width: 84px;
-    height: 84px;
-    margin: -42px 0 0 -42px;
-    background: var(--night);
+    width: 22px;
+    height: 22px;
+    margin: -11px 0 0 -11px;
+    background: #000;
     mix-blend-mode: normal;
 }
 

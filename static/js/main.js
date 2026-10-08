@@ -7,6 +7,417 @@ root.classList.add("js");
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const hasMouse = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
+// ---- Sound ----
+// Small interface sounds, made in the browser (there are no audio files).
+// Browsers only allow sound after the visitor has clicked or pressed a key,
+// so nothing plays before that. The header button mutes it, and the choice
+// is remembered on this device.
+const sound = (function () {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const toggle = document.querySelector("[data-sound-toggle]");
+    let enabled = Boolean(AudioContext);
+    let context = null;
+
+    try {
+        if (localStorage.getItem("sound") === "off") {
+            enabled = false;
+        }
+    } catch (error) {
+        // Storage blocked: sound simply starts on each visit.
+    }
+
+    function showState() {
+        if (toggle) {
+            toggle.setAttribute("aria-pressed", enabled);
+            toggle.hidden = !AudioContext;
+        }
+    }
+
+    // Created on the first click or key press, as browsers require.
+    function unlock() {
+        if (!context && enabled) {
+            context = new AudioContext();
+        }
+        if (context && context.state === "suspended") {
+            context.resume();
+        }
+        startMusic();
+    }
+
+    // -- Background music --
+    // If a music file has been added to the site it plays from its starting
+    // point, quietly, and carries on from where it was on the next page.
+    // Otherwise the built-in loop below plays instead.
+    const track = document.querySelector("[data-music]");
+    const musicVolume = 0.16;
+    let musicOn = false;
+    let pad = null;
+    let fade = null;
+
+    function fadeTrack(to, done) {
+        clearInterval(fade);
+        fade = setInterval(() => {
+            if (Math.abs(to - track.volume) <= 0.01) {
+                track.volume = to;
+                clearInterval(fade);
+                if (done) {
+                    done();
+                }
+            } else {
+                track.volume += Math.sign(to - track.volume) * 0.01;
+            }
+        }, 60);
+    }
+
+    function startTrack() {
+        const start = Number(track.dataset.start) || 0;
+        let resumeAt = start;
+        try {
+            resumeAt = Number(sessionStorage.getItem("musicAt")) || start;
+        } catch (error) {
+            // Storage blocked: the track starts from its starting point.
+        }
+
+        track.volume = 0;
+        const begin = () => {
+            // Past the end (or too close to it): go back to the starting point.
+            if (track.duration && resumeAt > track.duration - 2) {
+                resumeAt = start;
+            }
+            track.currentTime = resumeAt;
+            track.play().then(() => fadeTrack(musicVolume)).catch(() => {
+                musicOn = false;
+            });
+        };
+        if (track.readyState >= 1) {
+            begin();
+        } else {
+            track.addEventListener("loadedmetadata", begin, { once: true });
+            track.load();
+        }
+    }
+
+    if (track) {
+        // When the track finishes it begins again from its starting point.
+        track.addEventListener("ended", () => {
+            track.currentTime = Number(track.dataset.start) || 0;
+            track.play().catch(() => {});
+        });
+        window.addEventListener("pagehide", () => {
+            try {
+                sessionStorage.setItem("musicAt", String(track.currentTime));
+            } catch (error) {
+                // The next page just starts the track over.
+            }
+        });
+    }
+
+    // The built-in music: an original, laid-back four-bar loop. Electric-piano
+    // chords, a soft bass, a sparse melody and a gentle beat, all made from
+    // oscillators and filtered noise and scheduled a little ahead of time.
+    function startLoop() {
+        const beat = 60 / 74;
+        const hz = (note) => 440 * Math.pow(2, (note - 69) / 12);
+
+        // One bar each: bass note, chord notes, and melody as [beat, note, beats].
+        const bars = [
+            { bass: 38, chord: [54, 57, 61, 64], tune: [[0.5, 73, 1], [2, 69, 1.5]] },
+            { bass: 35, chord: [57, 59, 62, 66], tune: [[1, 71, 0.75], [2.5, 66, 1.5]] },
+            { bass: 40, chord: [55, 59, 62, 66], tune: [[0.5, 74, 1], [2, 71, 1], [3.25, 69, 0.75]] },
+            { bass: 33, chord: [55, 59, 61, 66], tune: [[1.5, 73, 0.5], [2, 76, 1.5]] },
+        ];
+
+        const master = context.createGain();
+        const warmth = context.createBiquadFilter();
+        warmth.type = "lowpass";
+        warmth.frequency.value = 2600;
+        master.gain.setValueAtTime(0.0001, context.currentTime);
+        master.gain.exponentialRampToValueAtTime(0.6, context.currentTime + 3);
+        warmth.connect(master).connect(context.destination);
+
+        // One second of noise, reused for the hi-hat and the rim click.
+        const noise = context.createBuffer(1, context.sampleRate, context.sampleRate);
+        const samples = noise.getChannelData(0);
+        for (let index = 0; index < samples.length; index += 1) {
+            samples[index] = Math.random() * 2 - 1;
+        }
+
+        // A note with a soft attack that eases off and is released at its end.
+        function note(frequency, when, length, volume, shape, detune) {
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.type = shape;
+            oscillator.frequency.value = frequency;
+            oscillator.detune.value = detune || 0;
+            gain.gain.setValueAtTime(0.0001, when);
+            gain.gain.exponentialRampToValueAtTime(volume, when + 0.03);
+            gain.gain.exponentialRampToValueAtTime(volume * 0.45, when + length * 0.6);
+            gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
+            oscillator.connect(gain).connect(warmth);
+            oscillator.start(when);
+            oscillator.stop(when + length + 0.05);
+        }
+
+        function keys(notes, when, length, volume) {
+            notes.forEach((value) => {
+                note(hz(value), when, length, volume, "sine");
+                note(hz(value), when, length, volume * 0.6, "triangle", 6);
+            });
+        }
+
+        function kick(when) {
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.frequency.setValueAtTime(120, when);
+            oscillator.frequency.exponentialRampToValueAtTime(45, when + 0.12);
+            gain.gain.setValueAtTime(0.22, when);
+            gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.26);
+            oscillator.connect(gain).connect(warmth);
+            oscillator.start(when);
+            oscillator.stop(when + 0.3);
+        }
+
+        function hiss(when, length, volume, type, frequency) {
+            const source = context.createBufferSource();
+            const filter = context.createBiquadFilter();
+            const gain = context.createGain();
+            source.buffer = noise;
+            filter.type = type;
+            filter.frequency.value = frequency;
+            gain.gain.setValueAtTime(volume, when);
+            gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
+            source.connect(filter).connect(gain).connect(warmth);
+            source.start(when, Math.random() * 0.5, length + 0.02);
+        }
+
+        function scheduleBar(index, start) {
+            const bar = bars[index % bars.length];
+            const at = (beats) => start + beats * beat;
+
+            // Chords: a long one on the first beat, a lighter one after the second.
+            keys(bar.chord, at(0), beat * 3.4, 0.04);
+            keys(bar.chord.slice(1), at(2.5), beat * 1.3, 0.025);
+
+            note(hz(bar.bass), at(0), beat * 1.6, 0.16, "sine");
+            note(hz(bar.bass), at(2.5), beat * 0.9, 0.12, "sine");
+
+            kick(at(0));
+            kick(at(2.5));
+            hiss(at(1), 0.09, 0.05, "bandpass", 1800);
+            hiss(at(3), 0.09, 0.05, "bandpass", 1800);
+            // Hi-hats on every half beat, the off-beats a touch late and quieter.
+            for (let half = 0; half < 8; half += 1) {
+                const late = half % 2 ? beat * 0.08 : 0;
+                hiss(at(half / 2) + late, 0.05, half % 2 ? 0.014 : 0.024, "highpass", 7000);
+            }
+
+            // The melody rests for four bars, then plays for four.
+            if (Math.floor(index / bars.length) % 2 === 1) {
+                bar.tune.forEach(([beats, value, length]) => {
+                    note(hz(value), at(beats), beat * length, 0.05, "triangle");
+                });
+            }
+        }
+
+        let barIndex = 0;
+        let nextBar = context.currentTime + 0.1;
+        const timer = setInterval(() => {
+            while (nextBar < context.currentTime + 0.5) {
+                scheduleBar(barIndex, nextBar);
+                barIndex += 1;
+                nextBar += beat * 4;
+            }
+        }, 120);
+
+        return {
+            stop() {
+                clearInterval(timer);
+                master.gain.cancelScheduledValues(context.currentTime);
+                master.gain.setValueAtTime(master.gain.value, context.currentTime);
+                master.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 1);
+                setTimeout(() => master.disconnect(), 1200);
+            },
+        };
+    }
+
+    function startMusic() {
+        if (musicOn || !enabled || !context) {
+            return;
+        }
+        musicOn = true;
+        if (track) {
+            startTrack();
+        } else if (context.state === "running") {
+            pad = startLoop();
+        } else {
+            // The sound engine is still waking up; this runs again when it is ready.
+            musicOn = false;
+        }
+    }
+
+    function stopMusic() {
+        musicOn = false;
+        if (track) {
+            fadeTrack(0, () => track.pause());
+        }
+        if (pad) {
+            pad.stop();
+            pad = null;
+        }
+    }
+
+    // One short tone that glides from one pitch to another and fades out.
+    function tone(from, to, length, volume, shape) {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        const now = context.currentTime;
+        oscillator.type = shape || "sine";
+        oscillator.frequency.setValueAtTime(from, now);
+        oscillator.frequency.exponentialRampToValueAtTime(to, now + length);
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + length);
+        oscillator.connect(gain).connect(context.destination);
+        oscillator.start(now);
+        oscillator.stop(now + length);
+    }
+
+    // A breath of filtered noise that sweeps upwards, used for wipes.
+    function whoosh() {
+        const length = 0.55;
+        const now = context.currentTime;
+        const buffer = context.createBuffer(1, context.sampleRate * length, context.sampleRate);
+        const samples = buffer.getChannelData(0);
+        for (let index = 0; index < samples.length; index += 1) {
+            samples[index] = Math.random() * 2 - 1;
+        }
+        const noise = context.createBufferSource();
+        const filter = context.createBiquadFilter();
+        const gain = context.createGain();
+        noise.buffer = buffer;
+        filter.type = "bandpass";
+        filter.Q.value = 0.9;
+        filter.frequency.setValueAtTime(300, now);
+        filter.frequency.exponentialRampToValueAtTime(2400, now + length);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.07, now + length * 0.4);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + length);
+        noise.connect(filter).connect(gain).connect(context.destination);
+        noise.start(now);
+    }
+
+    const sounds = {
+        hover: () => tone(1500, 1100, 0.05, 0.025),
+        click: () => {
+            tone(520, 780, 0.09, 0.09, "triangle");
+        },
+        // Choosing a perfume, a collection or any other page: two rising notes.
+        select: () => {
+            tone(660, 990, 0.14, 0.14, "triangle");
+            setTimeout(() => tone(1320, 1320, 0.16, 0.1, "sine"), 70);
+        },
+        on: () => {
+            tone(520, 520, 0.12, 0.05, "triangle");
+            setTimeout(() => tone(780, 780, 0.18, 0.05, "triangle"), 110);
+        },
+        whoosh,
+    };
+
+    function play(name) {
+        if (!enabled || !context) {
+            return;
+        }
+        // Still waking up after the first click: play as soon as it is ready.
+        if (context.state !== "running") {
+            context.resume().then(() => sounds[name]()).catch(() => {});
+            return;
+        }
+        sounds[name]();
+    }
+
+    document.addEventListener("pointerdown", unlock, { capture: true });
+    document.addEventListener("keydown", unlock, { capture: true });
+
+    if (toggle) {
+        toggle.addEventListener("click", () => {
+            enabled = !enabled;
+            try {
+                localStorage.setItem("sound", enabled ? "on" : "off");
+            } catch (error) {
+                // The choice just won't be remembered.
+            }
+            showState();
+            if (enabled) {
+                unlock();
+                play("on");
+            } else {
+                stopMusic();
+            }
+        });
+    }
+
+    // A click sound on anything pressable. A link to another page (a perfume,
+    // a collection, the bag...) would normally leave before its sound could be
+    // heard, so the page waits a moment for it and then goes.
+    document.addEventListener("click", (event) => {
+        const pressed = event.target.closest("a, button, .size-option, label.pay-option");
+        if (!pressed || pressed === toggle) {
+            return;
+        }
+
+        const leaves = pressed.matches("a[href]") && pressed.origin === location.origin
+            && !(pressed.pathname === location.pathname && pressed.search === location.search && pressed.hash);
+        if (!leaves) {
+            play("click");
+            return;
+        }
+
+        play("select");
+        const ordinaryClick = event.button === 0 && !event.defaultPrevented && !pressed.target
+            && !pressed.hasAttribute("download")
+            && !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
+        // Browsers using the dark slab between pages already pause long enough.
+        if (enabled && context && ordinaryClick && !root.classList.contains("no-vt")) {
+            event.preventDefault();
+            setTimeout(() => {
+                location.href = pressed.href;
+            }, 240);
+        }
+    });
+
+    // A faint tick as the mouse moves onto something pressable.
+    if (hasMouse) {
+        let last = null;
+        document.addEventListener("mouseover", (event) => {
+            const item = event.target.closest("a, button, .product-card");
+            if (item && item !== last) {
+                play("hover");
+            }
+            last = item;
+        });
+    }
+
+    // Once a visitor has clicked somewhere on the site, browsers usually let
+    // later pages make sound straight away, so try now rather than waiting.
+    if (enabled) {
+        try {
+            context = new AudioContext();
+        } catch (error) {
+            context = null;
+        }
+    }
+
+    // The music starts as soon as the browser lets the sound engine run.
+    if (context) {
+        context.addEventListener("statechange", startMusic);
+        if (context.state === "running") {
+            startMusic();
+        }
+    }
+
+    showState();
+    return { play };
+})();
+
 // ---- Intro ----
 // base.html adds "intro" on the first page of a visit. The counter follows the
 // page load, then the dark slab slides away and the page animates in.
@@ -234,10 +645,13 @@ document.querySelectorAll("[data-slider]").forEach((slider) => {
         }, 28);
     }
 
-    function show(index) {
+    function show(index, byVisitor) {
         const next = (index + count) % count;
         if (next === current) {
             return;
+        }
+        if (byVisitor) {
+            sound.play("whoosh");
         }
         // The outgoing slide stays underneath while the new one wipes over it.
         slides.forEach((slide, position) => slide.classList.toggle("is-prev", position === current));
@@ -249,8 +663,8 @@ document.querySelectorAll("[data-slider]").forEach((slider) => {
     }
 
     tabs.forEach((tab, index) => {
-        tab.addEventListener("mouseenter", () => show(index));
-        tab.addEventListener("focus", () => show(index));
+        tab.addEventListener("mouseenter", () => show(index, true));
+        tab.addEventListener("focus", () => show(index, true));
         // The timer line is the caption's ::after; when it fills, move on.
         tab.addEventListener("animationend", (event) => {
             if (event.animationName === "slide-timer") {
@@ -264,9 +678,9 @@ document.querySelectorAll("[data-slider]").forEach((slider) => {
             return;
         }
         if (event.key === "ArrowRight") {
-            show(current + 1);
+            show(current + 1, true);
         } else if (event.key === "ArrowLeft") {
-            show(current - 1);
+            show(current - 1, true);
         }
     });
 
@@ -277,7 +691,7 @@ document.querySelectorAll("[data-slider]").forEach((slider) => {
     slider.addEventListener("touchend", (event) => {
         const moved = event.changedTouches[0].clientX - touchStart;
         if (Math.abs(moved) > 50) {
-            show(current + (moved < 0 ? 1 : -1));
+            show(current + (moved < 0 ? 1 : -1), true);
         }
     }, { passive: true });
 
@@ -370,9 +784,9 @@ if (!prefersReducedMotion && hasMouse) {
 // ---- Pointer effects (mouse only) ----
 if (!prefersReducedMotion && hasMouse) {
     // A dot trails the pointer. It grows over anything clickable, and over
-    // pictures that open a perfume it becomes a round "View" label.
+    // pictures that open a perfume it becomes a small solid black dot.
     document.querySelectorAll(".slide, .slide-tab, .product-visual").forEach((item) => {
-        item.dataset.cursor = "View";
+        item.dataset.cursor = "";
     });
 
     const cursor = document.createElement("div");
@@ -436,6 +850,21 @@ if (!prefersReducedMotion && hasMouse) {
             visual.style.removeProperty("--tilt-y");
         });
     });
+}
+
+// ---- Checkout: the button says what happens next ----
+const placeOrderButton = document.querySelector("[data-place-order]");
+
+if (placeOrderButton) {
+    const choices = document.querySelectorAll('input[name="payment_method"]');
+
+    function nameButton() {
+        const chosen = document.querySelector('input[name="payment_method"]:checked');
+        placeOrderButton.textContent = chosen && chosen.value !== "cod" ? "Continue to payment" : "Place order";
+    }
+
+    choices.forEach((choice) => choice.addEventListener("change", nameButton));
+    nameButton();
 }
 
 // ---- Toast messages fade out on their own ----

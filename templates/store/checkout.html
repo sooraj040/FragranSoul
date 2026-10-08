@@ -43,10 +43,26 @@
                 </label>
             </div>
 
+            <!-- Online methods are paid on the next page, through the payment
+                 gateway. They are switched off until one is set up. -->
             <h2>Payment</h2>
-            <div class="pay-option">
-                <strong>Cash on delivery</strong>
-                <span>Pay when your order arrives. No online payment is taken.</span>
+            <div class="pay-options">
+                {% for value, label in payment_choices %}
+                    <label class="pay-option{% if value in online_methods and not online_available %} is-off{% endif %}">
+                        <input type="radio" name="payment_method" value="{{ value }}"
+                               {% if value == chosen_payment %}checked{% endif %}
+                               {% if value in online_methods and not online_available %}disabled{% endif %}>
+                        <strong>{{ label }}</strong>
+                        <span>
+                            {% if value == 'cod' %}Pay in cash when your order arrives.
+                            {% elif not online_available %}Not available yet.
+                            {% elif value == 'upi' %}Pay now with any UPI app.
+                            {% elif value == 'netbanking' %}Pay now from your bank account.
+                            {% else %}Pay now with a Visa, Mastercard or RuPay card.{% endif %}
+                        </span>
+                    </label>
+                {% endfor %}
+                {{ form.payment_method.errors }}
             </div>
         </div>
 
@@ -66,7 +82,7 @@
                 <div><dt>Shipping</dt><dd>{% if shipping %}{{ shipping|rupees }}{% else %}Complimentary{% endif %}</dd></div>
                 <div class="summary-total"><dt>Total</dt><dd>{{ total|rupees }}</dd></div>
             </dl>
-            <button class="btn dark wide" type="submit">Place order</button>
+            <button class="btn dark wide" type="submit" data-place-order>Place order</button>
             <a class="text-link" href="{% url 'store:cart' %}">Edit bag</a>
         </aside>
     </form>

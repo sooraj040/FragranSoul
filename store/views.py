@@ -18,9 +18,11 @@ from django.db import transaction
 from django.db.models import F, Min, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from . import payments
 from .forms import CheckoutForm
 from .models import Category, Order, OrderItem, Product, ProductVariant
 
@@ -368,6 +370,9 @@ def checkout(request):
             request.session["cart"] = {}
             # Lets guests open the confirmation page for orders they placed.
             request.session["orders"] = request.session.get("orders", []) + [order.order_number]
+            # Online methods are paid on the next page; cash is paid on delivery.
+            if order.is_online:
+                return redirect("store:pay", order_number=order.order_number)
             return redirect(order.get_absolute_url())
     else:
         initial = {}
@@ -388,12 +393,16 @@ def checkout(request):
             "subtotal": subtotal,
             "shipping": shipping,
             "total": subtotal + shipping,
+            "payment_choices": Order.PAYMENT_CHOICES,
+            "online_methods": Order.ONLINE_METHODS,
+            "online_available": payments.online_available(),
+            "chosen_payment": form["payment_method"].value() or "cod",
         },
     )
 
 
-def order_detail(request, order_number):
-    """Show the confirmation for one order to the customer who placed it."""
+def customer_order(request, order_number):
+    """Return an order only to the customer who placed it (or to staff)."""
     order = get_object_or_404(
         Order.objects.prefetch_related("items"),
         order_number=order_number,
@@ -403,8 +412,136 @@ def order_detail(request, order_number):
     placed_in_this_session = order.order_number in request.session.get("orders", [])
     if not (is_owner or placed_in_this_session or request.user.is_staff):
         raise Http404
+    return order
 
+
+def mark_paid(order, payment_id):
+    """Record a confirmed online payment and move the order along.
+
+    The update only touches an order that is still unpaid, so a payment
+    reported twice (by the browser and by a later check) is recorded once.
+    Returns False when there was nothing left to record.
+    """
+    paid_at = timezone.now()
+    with transaction.atomic():
+        recorded = Order.objects.filter(pk=order.pk, paid_at=None).exclude(status="cancelled").update(
+            paid_at=paid_at,
+            gateway_payment_id=payment_id,
+        )
+        if recorded:
+            Order.objects.filter(pk=order.pk, status="pending").update(status="confirmed")
+
+    order.refresh_from_db(fields=["paid_at", "gateway_payment_id", "status"])
+    return bool(recorded)
+
+
+def settle_payment(order):
+    """Mark the order paid if Razorpay already holds the money for it.
+
+    Covers a customer who paid but whose browser never reported back (closed
+    tab, lost connection, switched to a UPI app). Returns True when the order
+    was just marked paid.
+    """
+    if not (order.awaiting_payment and order.gateway_order_id and payments.gateway_ready()):
+        return False
+    try:
+        payment_id = payments.captured_payment_id(order.gateway_order_id)
+    except payments.PaymentError:
+        return False
+    return bool(payment_id) and mark_paid(order, payment_id)
+
+
+def order_detail(request, order_number):
+    """Show the confirmation for one order to the customer who placed it."""
+    order = customer_order(request, order_number)
+    if settle_payment(order):
+        messages.success(request, "Payment received. Thank you.")
     return render(request, "store/order_success.html", {"order": order})
+
+
+def pay(request, order_number):
+    """Take payment for an order placed with UPI, net banking or a card.
+
+    With Razorpay keys set, the page opens Razorpay's own payment window. On a
+    developer's machine without keys it shows a stand-in test page instead.
+    """
+    order = customer_order(request, order_number)
+    # An earlier attempt may already have gone through; never charge twice.
+    if settle_payment(order):
+        messages.success(request, "Payment received. Thank you.")
+    if not order.awaiting_payment:
+        return redirect(order.get_absolute_url())
+
+    context = {"order": order, "sandbox": payments.sandbox()}
+
+    if payments.gateway_ready():
+        if not order.gateway_order_id:
+            try:
+                order.gateway_order_id = payments.create_gateway_order(order)
+            except payments.PaymentError:
+                messages.error(request, "We could not reach the payment service. Please try again in a moment.")
+                return redirect(order.get_absolute_url())
+            order.save(update_fields=["gateway_order_id"])
+
+        context.update(
+            {
+                "gateway_key": settings.RAZORPAY_KEY_ID,
+                "amount_paise": int(order.total * 100),
+                # Only the method chosen at checkout is offered in the window.
+                "methods": {method: method == order.payment_method for method in Order.ONLINE_METHODS},
+            }
+        )
+    elif not payments.sandbox():
+        messages.error(request, "Online payment is not available right now.")
+        return redirect(order.get_absolute_url())
+
+    return render(request, "store/pay.html", context)
+
+
+@require_POST
+def pay_confirm(request, order_number):
+    """Razorpay's payment window posts here when the customer has paid."""
+    order = customer_order(request, order_number)
+    if not order.awaiting_payment:
+        return redirect(order.get_absolute_url())
+
+    payment_id = request.POST.get("razorpay_payment_id", "")
+    genuine = (
+        payments.gateway_ready()
+        and order.gateway_order_id
+        and request.POST.get("razorpay_order_id") == order.gateway_order_id
+        and payments.signature_is_valid(order.gateway_order_id, payment_id, request.POST.get("razorpay_signature"))
+    )
+    # A confirmation that does not check out may still be a real payment, so
+    # ask Razorpay directly before telling the customer it failed.
+    if not genuine and settle_payment(order):
+        messages.success(request, "Payment received. Thank you.")
+        return redirect(order.get_absolute_url())
+    if not genuine:
+        messages.error(request, "We could not confirm that payment. If money left your account, please contact us.")
+        return redirect("store:pay", order_number=order.order_number)
+
+    mark_paid(order, payment_id)
+    messages.success(request, "Payment received. Thank you.")
+    return redirect(order.get_absolute_url())
+
+
+@require_POST
+def pay_sandbox(request, order_number):
+    """Stand-in for the payment window on a developer's machine. No money moves."""
+    if not payments.sandbox():
+        raise Http404
+    order = customer_order(request, order_number)
+    if not order.awaiting_payment:
+        return redirect(order.get_absolute_url())
+
+    if request.POST.get("result") == "success":
+        mark_paid(order, f"TEST-{order.order_number}")
+        messages.success(request, "Test payment recorded. No money was taken.")
+        return redirect(order.get_absolute_url())
+
+    messages.error(request, "Test payment declined. You can try again.")
+    return redirect("store:pay", order_number=order.order_number)
 
 
 @login_required

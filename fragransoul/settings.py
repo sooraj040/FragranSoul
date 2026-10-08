@@ -110,3 +110,18 @@ if not DEBUG:
 # smaller orders are charged SHIPPING_FEE.
 FREE_SHIPPING_THRESHOLD = Decimal('2000')
 SHIPPING_FEE = Decimal('0')
+
+# Online payments (UPI, net banking, cards) go through Razorpay and switch on
+# when both keys are set. See store/payments.py.
+RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '')
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
+# With no keys, a developer's machine uses a stand-in test payment page so the
+# flow can be tried. It is never used on the live site, where DEBUG is off.
+PAYMENTS_SANDBOX = DEBUG
+
+# Background music. Put a track you have the right to use at
+# static/audio/background.mp3 and it plays softly behind the store, starting
+# BACKGROUND_MUSIC_START seconds in. With no file, a gentle built-in tone
+# (made in the browser) plays instead.
+BACKGROUND_MUSIC_FILE = 'audio/background.mp3'
+BACKGROUND_MUSIC_START = 26

@@ -5,6 +5,7 @@ import re
 from django import forms
 from django.utils.text import slugify
 
+from . import payments
 from .models import Category, Order, Product, ProductVariant
 
 
@@ -21,11 +22,21 @@ def unique_slug(model, text, instance=None):
 
 
 class CheckoutForm(forms.ModelForm):
-    """Delivery details collected on the checkout page."""
+    """Delivery details and payment choice collected on the checkout page."""
+
+    # Cash on delivery is used when no choice is sent.
+    payment_method = forms.ChoiceField(choices=Order.PAYMENT_CHOICES, required=False)
 
     class Meta:
         model = Order
-        fields = ["full_name", "email", "phone", "address", "city", "pin_code"]
+        fields = ["full_name", "email", "phone", "address", "city", "pin_code", "payment_method"]
+
+    def clean_payment_method(self):
+        """Refuse online methods while no payment gateway is switched on."""
+        method = self.cleaned_data.get("payment_method") or "cod"
+        if method in Order.ONLINE_METHODS and not payments.online_available():
+            raise forms.ValidationError("Online payment is not available yet. Please choose cash on delivery.")
+        return method
 
     def clean_phone(self):
         """Accept a 10-digit Indian mobile number, with or without +91."""
