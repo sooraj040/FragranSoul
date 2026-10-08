@@ -1,0 +1,13 @@
+name,category,gender,brand,description,notes,volume_ml,price,old_price,stock,is_featured,is_new,image
+Rave Now,Fresh,unisex,FragranSoul,"A bright, electric rush of citrus and mint over clean white musk. Made for nights that start late.","Grapefruit, mint and white musk",8,349,,25,yes,yes,rave-now.jpg
+Rave Now,Fresh,unisex,FragranSoul,,,20,749,,15,,,
+Rave Now,Fresh,unisex,FragranSoul,,,30,999,1149,10,,,
+Purple Oud,Woody,unisex,FragranSoul,"Dark oud wrapped in plum and violet, resting on smooth sandalwood.","Oud, plum and violet",8,399,,20,yes,yes,purple-oud.jpg
+Purple Oud,Woody,unisex,FragranSoul,,,20,849,999,12,,,
+Purple Oud,Woody,unisex,FragranSoul,,,30,1149,,8,,,
+Vampire Blood,Amber,unisex,FragranSoul,"Deep red fruits and rose over warm amber and a trace of incense. Rich, sweet and a little dangerous.","Black cherry, rose and amber",8,379,,22,yes,yes,vampire-blood.jpg
+Vampire Blood,Amber,unisex,FragranSoul,,,20,799,,14,,,
+Vampire Blood,Amber,unisex,FragranSoul,,,30,1099,1249,9,,,
+Imperial Valley,Woody,men,FragranSoul,"Crisp bergamot and green fig opening onto dry cedar and vetiver. Clean, calm and confident.","Bergamot, fig and cedar",8,369,,24,yes,yes,imperial-valley.jpg
+Imperial Valley,Woody,men,FragranSoul,,,20,779,,16,,,
+Imperial Valley,Woody,men,FragranSoul,,,30,1049,,11,,,

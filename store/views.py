@@ -114,6 +114,8 @@ def available_products():
         .filter(min_price__isnull=False)
         .select_related("category")
         .prefetch_related("variants")
+        # The model's default ordering is dropped once the query aggregates.
+        .order_by("-created_at")
     )
 
 
