@@ -39,7 +39,9 @@ DEBUG = os.environ.get('DJANGO_DEBUG', '0' if ON_VERCEL else '1') == '1'
 
 ALLOWED_HOSTS = env_list(
     'DJANGO_ALLOWED_HOSTS',
-    '.vercel.app' if ON_VERCEL else 'localhost,127.0.0.1',
+    '.vercel.app,fragransoul.in,www.fragransoul.in'
+    if ON_VERCEL
+    else 'localhost,127.0.0.1'
 )
 CSRF_TRUSTED_ORIGINS = env_list(
     'DJANGO_CSRF_TRUSTED_ORIGINS',
