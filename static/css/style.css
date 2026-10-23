@@ -1369,17 +1369,6 @@ main:has(.slider) + .site-footer {
     font-size: 14px;
 }
 
-/* On the Men, Women and Unisex tabs perfumes are grouped under section headings. */
-.shop-section + .shop-section {
-    margin-top: 96px;
-}
-
-@media (max-width: 900px) {
-    .shop-section + .shop-section {
-        margin-top: 56px;
-    }
-}
-
 /* ---------- 7. Product page ---------- */
 .breadcrumb {
     display: flex;

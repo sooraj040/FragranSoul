@@ -2,7 +2,7 @@
 
 from django.contrib import admin, messages
 
-from .models import Category, Order, OrderItem, Product, ProductVariant, Section
+from .models import Category, Order, OrderItem, Product, ProductVariant
 
 
 class ProductVariantInline(admin.TabularInline):
@@ -23,15 +23,6 @@ class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
 
-@admin.register(Section)
-class SectionAdmin(admin.ModelAdmin):
-    """Headings such as "Designer & Niche" that group perfumes on the collection pages."""
-
-    list_display = ("name", "position")
-    list_editable = ("position",)
-    search_fields = ("name",)
-
-
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     """Main perfume admin page, including all bottle-size variants."""
@@ -41,12 +32,11 @@ class ProductAdmin(admin.ModelAdmin):
         "brand",
         "category",
         "gender",
-        "section",
         "starting_price_display",
         "is_featured",
         "is_new",
     )
-    list_filter = ("gender", "section", "category", "is_featured", "is_new")
+    list_filter = ("gender", "category", "is_featured", "is_new")
     search_fields = ("name", "brand", "notes")
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("created_at",)

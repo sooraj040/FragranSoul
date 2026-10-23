@@ -11,7 +11,7 @@ from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
 from .forms import CheckoutForm
-from .models import Category, Order, Product, ProductVariant, Section
+from .models import Category, Order, Product, ProductVariant
 from .views import OutOfStock, place_order
 
 DELIVERY = {
@@ -317,28 +317,19 @@ class StorefrontDetailTests(StoreTestCase):
         self.assertEqual(names(gender="nonsense"), ["Night Leather", "Rose Veil", "Test Oud"])
         self.assertEqual(names(gender="men", q="rose"), [])
 
-    def test_collection_tabs_group_perfumes_under_sections(self):
-        niche = Section.objects.create(name="Designer & Niche", position=1)
-        arabic = Section.objects.create(name="Arabic", position=2)
-        for name, section in (("Oud Night", arabic), ("Leather Noir", niche), ("Plain Musk", None)):
-            product = Product.objects.create(
-                name=name, slug=name.lower().replace(" ", "-"), category=self.category, gender="men", section=section
-            )
-            ProductVariant.objects.create(product=product, volume_ml=8, price=Decimal("349"), stock=5)
-
+    def test_only_men_women_and_unisex_are_offered(self):
         response = self.client.get(reverse("store:shop"), {"gender": "men"})
-        groups = [(title, [p.name for p in items]) for title, items in response.context["sections"]]
-        self.assertEqual(groups, [
-            ("Designer & Niche", ["Leather Noir"]),
-            ("Arabic", ["Oud Night"]),
-            ("More perfumes", ["Plain Musk"]),
-        ])
         self.assertContains(response, "Men&#x27;s Perfumes")
         self.assertContains(response, "For him · Fresh, woody, spicy and bold")
 
-        # The All tab stays one grid, and collections without sections are not grouped.
-        self.assertEqual(self.client.get(reverse("store:shop")).context["sections"], [])
-        self.assertEqual(self.client.get(reverse("store:shop"), {"gender": "unisex"}).context["sections"], [])
+        shop = reverse("store:shop")
+        for label, gender in (("Men", "men"), ("Women", "women"), ("Unisex", "unisex")):
+            self.assertContains(response, f'href="{shop}?gender={gender}">{label}</a>')
+        # No "All" tab or menu link, and no fragrance-family links or filter.
+        self.assertNotContains(response, f'href="{shop}">All perfumes</a>')
+        self.assertNotContains(response, ">All</a>")
+        self.assertNotContains(response, "?category=")
+        self.assertNotContains(response, 'name="category"')
 
     def test_store_has_no_staff_controls(self):
         Product.objects.all().delete()
@@ -428,13 +419,11 @@ class DashboardTests(StoreTestCase):
 
     def test_add_perfume_with_sizes(self):
         self.sign_in()
-        section = Section.objects.create(name="Designer & Niche")
         data = {
             "name": "Rose Smoke",
             "brand": "FragranSoul",
             "gender": "women",
             "category": self.category.pk,
-            "section": section.pk,
             "description": "Rose over smoke.",
             "notes": "Rose, incense",
             "is_new": "on",
@@ -449,7 +438,6 @@ class DashboardTests(StoreTestCase):
         product = Product.objects.get(name="Rose Smoke")
         self.assertEqual(product.slug, "rose-smoke")
         self.assertEqual(product.gender, "women")
-        self.assertEqual(product.section, section)
         self.assertEqual(product.variants.count(), 2)
         self.assertContains(self.client.get(reverse("store:shop")), "Rose Smoke")
 
@@ -547,21 +535,6 @@ class ImportProductsTests(TestCase):
         self.assertEqual(Category.objects.count(), 1)
         variant = product.variants.get(volume_ml=10)
         self.assertEqual((variant.price, variant.stock), (Decimal("399"), 20))
-
-    def test_import_puts_perfumes_in_sections(self):
-        Section.objects.create(name="Designer & Niche", position=4)
-        path = Path(self.enterContext(tempfile.TemporaryDirectory())) / "sections.csv"
-        path.write_text(
-            "name,category,gender,section,volume_ml,price,stock\n"
-            "Dior Sauvage,Fresh,men,designer & niche,8,349,20\n"
-            "Oudhud,Woody,men,Arabic,8,349,20\n",
-            encoding="utf-8",
-        )
-        call_command("import_products", str(path), verbosity=0)
-
-        self.assertEqual(Product.objects.get(slug="dior-sauvage").section.name, "Designer & Niche")
-        arabic = Product.objects.get(slug="oudhud").section
-        self.assertEqual((arabic.name, arabic.position), ("Arabic", 5))  # new sections go last
 
     def test_dry_run_and_bad_rows_save_nothing(self):
         self.run_import("Amber Night,Amber,,,,10,349,,15,,\n", dry_run=True)

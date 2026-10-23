@@ -24,7 +24,7 @@ from django.views.decorators.http import require_POST
 
 from . import payments
 from .forms import CheckoutForm
-from .models import Category, Order, OrderItem, Product, ProductVariant
+from .models import Order, OrderItem, Product, ProductVariant
 
 
 class OutOfStock(Exception):
@@ -119,31 +119,11 @@ def available_products():
             min_price=Min("variants__price", filter=Q(variants__stock__gt=0))
         )
         .filter(min_price__isnull=False)
-        .select_related("category", "section")
+        .select_related("category")
         .prefetch_related("variants")
         # The model's default ordering is dropped once the query aggregates.
         .order_by("-created_at")
     )
-
-
-def group_by_section(products):
-    """Split perfumes into (heading, perfumes) pairs in section order.
-
-    Perfumes without a section come last under "More perfumes". When none of
-    them has a section the list is empty and the page shows one plain grid.
-    """
-    groups = {}
-    for product in products:
-        groups.setdefault(product.section, []).append(product)
-    unsectioned = groups.pop(None, [])
-    if not groups:
-        return []
-
-    sections = sorted(groups, key=lambda section: (section.position, section.name))
-    result = [(section.name, groups[section]) for section in sections]
-    if unsectioned:
-        result.append(("More perfumes", unsectioned))
-    return result
 
 
 def home(request):
@@ -200,13 +180,9 @@ def shop(request):
         "store/shop.html",
         {
             "products": products,
-            # The collection tabs group their perfumes under section headings.
-            "sections": group_by_section(products) if gender else [],
             "heading": heading,
             "tagline": tagline,
-            "categories": Category.objects.all(),
             "q": search_query,
-            "selected_category": category_slug,
             "gender": gender,
             "gender_label": dict(Product.GENDER_CHOICES).get(gender, ""),
             "collections": Product.GENDER_CHOICES,

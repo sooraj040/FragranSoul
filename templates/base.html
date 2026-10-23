@@ -74,7 +74,7 @@
 
         <form class="head-search" action="{% url 'store:shop' %}" method="get" role="search">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m21 21-6.2-6.2"/></svg>
-            <input type="search" name="q" placeholder="Search for perfumes, notes, families" aria-label="Search perfumes">
+            <input type="search" name="q" placeholder="Search for perfumes or notes" aria-label="Search perfumes">
         </form>
 
         <div class="head-icons">
@@ -104,16 +104,11 @@
             {% endif %}
         </div>
 
-        <!-- The collections match the "For" choice on each perfume in the
-             dashboard; the families come from the dashboard too. -->
+        <!-- The collections match the "For" choice on each perfume in the dashboard. -->
         <nav class="head-nav" id="site-nav" aria-label="Main navigation">
-            <a href="{% url 'store:shop' %}">All perfumes</a>
             <a href="{% url 'store:shop' %}?gender=men">Men</a>
             <a href="{% url 'store:shop' %}?gender=women">Women</a>
             <a href="{% url 'store:shop' %}?gender=unisex">Unisex</a>
-            {% for c in nav_categories %}
-                <a href="{% url 'store:shop' %}?category={{ c.slug }}">{{ c.name }}</a>
-            {% endfor %}
         </nav>
 
         <a class="head-bag" href="{% url 'store:cart' %}" aria-label="Bag, {{ cart_count }} item{{ cart_count|pluralize }}">
@@ -144,13 +139,9 @@
 
             <div>
                 <h4>Explore</h4>
-                <a href="{% url 'store:shop' %}">All perfumes</a>
                 <a href="{% url 'store:shop' %}?gender=men">Men</a>
                 <a href="{% url 'store:shop' %}?gender=women">Women</a>
                 <a href="{% url 'store:shop' %}?gender=unisex">Unisex</a>
-                {% for c in nav_categories %}
-                    <a href="{% url 'store:shop' %}?category={{ c.slug }}">{{ c.name|title }}</a>
-                {% endfor %}
             </div>
 
             <div>

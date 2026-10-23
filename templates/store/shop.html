@@ -10,17 +10,15 @@
 </section>
 
 <div class="container">
-    <!-- Collection tabs. Each keeps the current search, family and sorting. -->
+    <!-- Collection tabs. Each keeps the current search and sorting. -->
     <nav class="tabs" aria-label="Collections">
-        <a href="?q={{ q|urlencode }}&category={{ selected_category }}&sort={{ sort }}"
-           class="{% if not gender %}active{% endif %}">All</a>
         {% for value, label in collections %}
-            <a href="?gender={{ value }}&q={{ q|urlencode }}&category={{ selected_category }}&sort={{ sort }}"
+            <a href="?gender={{ value }}&q={{ q|urlencode }}&sort={{ sort }}"
                class="{% if gender == value %}active{% endif %}">{{ label }}</a>
         {% endfor %}
     </nav>
 
-    <!-- Search, fragrance-family filter and sorting. -->
+    <!-- Search and sorting. -->
     <form method="get" class="filter-bar">
         <input type="hidden" name="gender" value="{{ gender }}">
 
@@ -28,13 +26,6 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
             <input type="search" name="q" value="{{ q }}" placeholder="Search by perfume or note" aria-label="Search perfumes">
         </label>
-
-        <select name="category" aria-label="Filter by fragrance family" data-autosubmit>
-            <option value="">All families</option>
-            {% for c in categories %}
-                <option value="{{ c.slug }}" {% if selected_category == c.slug %}selected{% endif %}>{{ c.name|title }}</option>
-            {% endfor %}
-        </select>
 
         <select name="sort" aria-label="Sort perfumes" data-autosubmit>
             {% for key, label in sort_options %}
@@ -52,44 +43,25 @@
         {% endif %}
     </div>
 
-    <!-- On the Men, Women and Unisex tabs the perfumes are grouped under their
-         section headings (set per perfume in the dashboard). -->
-    {% for title, items in sections %}
-        <section class="shop-section">
-            <div class="section-head">
-                <div>
-                    <p class="kicker">{{ items|length }} perfume{{ items|length|pluralize }}</p>
-                    <h2>{{ title }}</h2>
-                </div>
+    <div class="product-grid shop-grid">
+        {% for p in products %}
+            {% include 'store/product_card.html' with product=p %}
+        {% empty %}
+            <div class="empty">
+                <div class="empty-mark" aria-hidden="true">FS</div>
+                {% if is_filtered %}
+                    <h3>No perfumes match your search.</h3>
+                    <p>Try a different perfume or note.</p>
+                    <a class="btn dark" href="{% url 'store:shop' %}{% if gender %}?gender={{ gender }}{% endif %}">Clear filters</a>
+                {% elif gender %}
+                    <h3>Nothing in this collection yet.</h3>
+                    <p>New perfumes are on their way.</p>
+                {% else %}
+                    <h3>The collection is being composed.</h3>
+                    <p>Our first perfumes will be here shortly.</p>
+                {% endif %}
             </div>
-            <div class="product-grid shop-grid">
-                {% for p in items %}
-                    {% include 'store/product_card.html' with product=p %}
-                {% endfor %}
-            </div>
-        </section>
-    {% empty %}
-        <div class="product-grid shop-grid">
-            {% for p in products %}
-                {% include 'store/product_card.html' with product=p %}
-            {% empty %}
-                <div class="empty">
-                    <div class="empty-mark" aria-hidden="true">FS</div>
-                    {% if is_filtered %}
-                        <h3>No perfumes match your search.</h3>
-                        <p>Try a different note or fragrance family.</p>
-                        <a class="btn dark" href="{% url 'store:shop' %}{% if gender %}?gender={{ gender }}{% endif %}">Clear filters</a>
-                    {% elif gender %}
-                        <h3>Nothing in this collection yet.</h3>
-                        <p>New perfumes are on their way.</p>
-                        <a class="btn dark" href="{% url 'store:shop' %}">View all perfumes</a>
-                    {% else %}
-                        <h3>The collection is being composed.</h3>
-                        <p>Our first perfumes will be here shortly.</p>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        </div>
-    {% endfor %}
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

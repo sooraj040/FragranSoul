@@ -28,20 +28,6 @@ class Category(models.Model):
         return self.name
 
 
-class Section(models.Model):
-    """A heading such as "Designer & Niche" that perfumes are grouped under
-    on the Men, Women and Unisex pages."""
-
-    name = models.CharField(max_length=80, unique=True)
-    position = models.PositiveIntegerField(default=0, help_text="Lower numbers are shown first.")
-
-    class Meta:
-        ordering = ["position", "name"]
-
-    def __str__(self):
-        return self.name
-
-
 class Product(models.Model):
     """The main perfume record shown to customers."""
 
@@ -65,14 +51,6 @@ class Product(models.Model):
         default="unisex",
         verbose_name="For",
         help_text="Which collection the perfume is listed under.",
-    )
-    section = models.ForeignKey(
-        Section,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="products",
-        help_text="The heading the perfume is listed under within its collection.",
     )
     description = models.TextField(blank=True)
     notes = models.CharField(
