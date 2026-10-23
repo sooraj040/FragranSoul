@@ -16,15 +16,11 @@
                 {% for item in items %}
                     <article class="cart-item">
                         <a class="cart-visual tone-{{ item.variant.product.gender }}" href="{{ item.variant.product.get_absolute_url }}" tabindex="-1" aria-hidden="true">
-                            {% if item.variant.product.image %}
-                                <img src="{{ item.variant.product.image.url }}" alt="">
-                            {% else %}
-                                <div class="bottle-art bottle-small">
-                                    <i class="bottle-cap"></i>
-                                    <i class="bottle-neck"></i>
-                                    <div class="bottle-body"></div>
-                                </div>
-                            {% endif %}
+                            <div class="bottle-art bottle-small">
+                                <i class="bottle-cap"></i>
+                                <i class="bottle-neck"></i>
+                                <div class="bottle-body"></div>
+                            </div>
                         </a>
 
                         <div class="cart-info">

@@ -14,15 +14,11 @@
     <!-- Product detail page: one perfume can contain many bottle-size variants. -->
     <section class="detail">
         <div class="detail-visual tone-{{ product.gender }}">
-            {% if product.image %}
-                <img src="{{ product.image.url }}" alt="{{ product.name }}">
-            {% else %}
-                <div class="bottle-art bottle-large">
-                    <i class="bottle-cap"></i>
-                    <i class="bottle-neck"></i>
-                    <div class="bottle-body"><span>FragranSoul<small>{{ product.name }}</small></span></div>
-                </div>
-            {% endif %}
+            <div class="bottle-art bottle-large">
+                <i class="bottle-cap"></i>
+                <i class="bottle-neck"></i>
+                <div class="bottle-body"><span>FragranSoul<small>{{ product.name }}</small></span></div>
+            </div>
             {% if product.is_new %}<span class="badges"><span class="badge">New</span></span>{% endif %}
         </div>
 

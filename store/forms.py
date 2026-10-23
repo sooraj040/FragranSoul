@@ -63,7 +63,7 @@ class ProductForm(forms.ModelForm):
 
     class Meta:
         model = Product
-        fields = ["name", "brand", "gender", "category", "description", "notes", "image", "is_featured", "is_new"]
+        fields = ["name", "brand", "gender", "category", "description", "notes", "is_featured", "is_new"]
         widgets = {"description": forms.Textarea(attrs={"rows": 5})}
         labels = {
             "is_featured": "Feature on the home page",

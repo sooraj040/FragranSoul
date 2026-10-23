@@ -492,7 +492,7 @@ class DashboardTests(StoreTestCase):
 
 
 class ImportProductsTests(TestCase):
-    HEADER = "name,category,brand,description,notes,volume_ml,price,old_price,stock,is_featured,is_new,image,gender\n"
+    HEADER = "name,category,brand,description,notes,volume_ml,price,old_price,stock,is_featured,is_new,gender\n"
 
     def run_import(self, body, **options):
         with tempfile.TemporaryDirectory() as folder:
@@ -502,8 +502,8 @@ class ImportProductsTests(TestCase):
 
     def test_import_creates_and_updates(self):
         body = (
-            "Amber Night,Amber,,Warm amber.,Amber and vanilla,10,349,,15,yes,yes,\n"
-            "Amber Night,Amber,,Warm amber.,Amber and vanilla,30,799,999,5,yes,yes,\n"
+            "Amber Night,Amber,,Warm amber.,Amber and vanilla,10,349,,15,yes,yes\n"
+            "Amber Night,Amber,,Warm amber.,Amber and vanilla,30,799,999,5,yes,yes\n"
         )
         self.run_import(body)
         product = Product.objects.get(slug="amber-night")
@@ -512,22 +512,22 @@ class ImportProductsTests(TestCase):
         self.assertEqual(product.variants.count(), 2)
         self.assertEqual(product.gender, "unisex")
 
-        self.run_import("Amber Night,amber,,,,10,399,,20,,,,Women\n")
+        self.run_import("Amber Night,amber,,,,10,399,,20,,,Women\n")
         product.refresh_from_db()
         self.assertEqual(product.gender, "women")
         with self.assertRaisesMessage(CommandError, "gender must be"):
-            self.run_import("Amber Night,amber,,,,10,399,,20,,,,kids\n")
+            self.run_import("Amber Night,amber,,,,10,399,,20,,,kids\n")
         self.assertEqual(Product.objects.count(), 1)
         self.assertEqual(Category.objects.count(), 1)
         variant = product.variants.get(volume_ml=10)
         self.assertEqual((variant.price, variant.stock), (Decimal("399"), 20))
 
     def test_dry_run_and_bad_rows_save_nothing(self):
-        self.run_import("Amber Night,Amber,,,,10,349,,15,,,\n", dry_run=True)
+        self.run_import("Amber Night,Amber,,,,10,349,,15,,\n", dry_run=True)
         self.assertEqual(Product.objects.count(), 0)
 
         with self.assertRaisesMessage(CommandError, "Line 3"):
-            self.run_import("Amber Night,Amber,,,,10,349,,15,,,\nRose,Floral,,,,ten,349,,15,,,\n")
+            self.run_import("Amber Night,Amber,,,,10,349,,15,,\nRose,Floral,,,,ten,349,,15,,\n")
         self.assertEqual(Product.objects.count(), 0)
 
 

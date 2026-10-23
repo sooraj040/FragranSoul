@@ -12,7 +12,6 @@ existing perfumes instead of creating duplicates.
 import csv
 from decimal import Decimal, InvalidOperation
 
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.text import slugify
@@ -93,11 +92,6 @@ class Command(BaseCommand):
         for column in ("is_featured", "is_new"):
             if row.get(column):
                 product_fields[column] = row[column].lower() in TRUE_VALUES
-        if row.get("image"):
-            image_path = f"products/{row['image']}"
-            if not (settings.MEDIA_ROOT / image_path).is_file():
-                raise ValueError(f"image '{row['image']}' was not found in media/products/.")
-            product_fields["image"] = image_path
 
         product, _ = Product.objects.update_or_create(
             slug=slugify(name),

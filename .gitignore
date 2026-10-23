@@ -4,6 +4,4 @@ __pycache__/
 db.sqlite3
 staticfiles/
 media/*
-# Product photos are kept in git: Vercel can only serve files that are deployed.
-!media/products/
 .env

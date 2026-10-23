@@ -13,7 +13,7 @@
     </div>
 {% endif %}
 
-<form method="post" enctype="multipart/form-data" class="split wide-left">
+<form method="post" class="split wide-left">
     {% csrf_token %}
 
     <div class="stack">
@@ -59,13 +59,6 @@
     </div>
 
     <div class="stack">
-        <section class="card">
-            <div class="card-head"><h2>Photo</h2></div>
-            {% if product.image %}<img class="photo" src="{{ product.image.url }}" alt="{{ product.name }}">{% endif %}
-            <div class="file">{{ form.image }}{{ form.image.errors }}</div>
-            <p class="hint">Without a photo the store shows an illustrated bottle.</p>
-        </section>
-
         <section class="card">
             <div class="card-head"><h2>Visibility</h2></div>
             <label class="check">{{ form.is_featured }} {{ form.is_featured.label }}</label>

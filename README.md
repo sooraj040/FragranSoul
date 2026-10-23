@@ -1,6 +1,6 @@
 # FragranSoul — Django Perfume Store
 
-A clean Django 6 storefront for FragranSoul. The project is intentionally delivered **without any products**. Products, images, bottle sizes, prices and stock are managed from Django Admin.
+A clean Django 6 storefront for FragranSoul. The project is intentionally delivered **without any products**. Products, bottle sizes, prices and stock are managed from Django Admin.
 
 ## Project structure
 
@@ -21,7 +21,6 @@ FragranSoul/
 │   └── dashboard/         # Staff dashboard pages
 ├── static/css/            # style.css (storefront) and dashboard.css (staff dashboard)
 ├── static/js/             # main.js (menu, size selection, quantity steppers)
-├── media/                 # Uploaded product images
 ├── manage.py
 └── requirements.txt
 ```
@@ -48,7 +47,7 @@ Sign in on the store with a staff account and you are taken straight to the dash
 
 - **Overview** — pending orders, order value, and bottle sizes that are running low.
 - **Orders** — search and filter orders, open one to change its status or cancel it and return the items to stock.
-- **Perfumes** — add, edit and delete perfumes, with their bottle sizes, prices, stock and photo.
+- **Perfumes** — add, edit and delete perfumes, with their bottle sizes, prices and stock. The store draws every perfume as an illustrated bottle; there are no product photos.
 - **Families** — add fragrance families. A family can only be deleted while it has no perfumes.
 
 A staff account is created with `python manage.py createsuperuser`. The built-in Django admin is still available at `/admin/` and manages the same data.
@@ -61,7 +60,7 @@ The quickest way is **Dashboard → Perfumes → Add perfume**. The same can be 
 2. Open `/admin/`.
 3. Open **Store → Categories** and create fragrance families if needed.
 4. Open **Store → Perfumes → Add Perfume**.
-5. Enter the perfume name, description, notes and image.
+5. Enter the perfume name, description and notes.
 6. At the bottom of the same page, add bottle-size variants.
 7. For each size enter:
    - Bottle size in ml
@@ -74,7 +73,7 @@ No code changes are required when adding normal products.
 
 ## Adding many products at once (CSV import)
 
-Fill in `products_template.csv` with one row per bottle size. Rows with the same perfume name become one perfume with several sizes. Required columns: `name`, `category`, `volume_ml`, `price`. The `gender` column takes `men`, `women` or `unisex` (unisex when left empty). Images named in the `image` column must already be in `media/products/`.
+Fill in `products_template.csv` with one row per bottle size. Rows with the same perfume name become one perfume with several sizes. Required columns: `name`, `category`, `volume_ml`, `price`. The `gender` column takes `men`, `women` or `unisex` (unisex when left empty).
 
 ```powershell
 python manage.py import_products products_template.csv --dry-run
@@ -109,7 +108,7 @@ Set these environment variables on the server; the built-in values are for local
 - `DJANGO_ALLOWED_HOSTS` — e.g. `fragransoul.com,www.fragransoul.com`
 - `DJANGO_CSRF_TRUSTED_ORIGINS` — e.g. `https://fragransoul.com`
 
-Then run `python manage.py collectstatic` and have the web server serve `staticfiles/` and `media/`.
+Then run `python manage.py collectstatic` and have the web server serve `staticfiles/`.
 
 ## Run the project on Windows PowerShell
 

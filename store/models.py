@@ -58,6 +58,8 @@ class Product(models.Model):
         blank=True,
         help_text="Example: Bergamot, amber and vanilla.",
     )
+    # The store no longer shows photos; every perfume is drawn as a bottle.
+    # The column is kept so the existing database needs no migration.
     image = models.ImageField(upload_to="products/", blank=True, null=True)
     is_featured = models.BooleanField(default=False)
     is_new = models.BooleanField(default=True)

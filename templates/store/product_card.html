@@ -3,15 +3,11 @@
      a typewritten line of details, then the action and the price. -->
 <article class="product-card" data-reveal>
     <a href="{{ product.get_absolute_url }}" class="product-visual tone-{{ product.gender }}" tabindex="-1" aria-hidden="true">
-        {% if product.image %}
-            <img src="{{ product.image.url }}" alt="" loading="lazy">
-        {% else %}
-            <div class="bottle-art">
-                <i class="bottle-cap"></i>
-                <i class="bottle-neck"></i>
-                <div class="bottle-body"><span>{{ product.name }}<small>FragranSoul</small></span></div>
-            </div>
-        {% endif %}
+        <div class="bottle-art">
+            <i class="bottle-cap"></i>
+            <i class="bottle-neck"></i>
+            <div class="bottle-body"><span>{{ product.name }}<small>FragranSoul</small></span></div>
+        </div>
 
         <span class="badges">
             {% if product.is_new %}<span class="badge">New</span>{% endif %}

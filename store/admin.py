@@ -40,6 +40,7 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ("name", "brand", "notes")
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("created_at",)
+    exclude = ("image",)
     inlines = [ProductVariantInline]
 
     @admin.display(description="Starting price")

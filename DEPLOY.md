@@ -88,12 +88,11 @@ application = get_wsgi_application()
 
    Replace `USERNAME`, then save.
 
-6. Under **Static files**, add two rows:
+6. Under **Static files**, add this row:
 
 | URL        | Directory                                  |
 |------------|--------------------------------------------|
 | `/static/` | `/home/USERNAME/FragranSoul/staticfiles`  |
-| `/media/`  | `/home/USERNAME/FragranSoul/media`        |
 
 7. Click the green **Reload** button.
 
@@ -131,7 +130,7 @@ Sign-in only works over HTTPS on the live site, so do this step before testing a
 
 - `https://www.fragransoul.in/` shows the home page with its styling.
 - Sign in with the account from step 4. You land on the dashboard.
-- Add a fragrance family, then a perfume with a photo. The photo shows in the store.
+- Add a fragrance family, then a perfume. It shows in the store.
 - Place a test order, then find it under **Orders** in the dashboard and cancel it.
 
 ## Updating the site later
@@ -146,14 +145,14 @@ python manage.py migrate
 python manage.py collectstatic --noinput
 ```
 
-and click **Reload** on the Web tab. Do not overwrite `db.sqlite3`, `media/` or
-`.env` on the server: they hold the live orders, photos and secret key.
+and click **Reload** on the Web tab. Do not overwrite `db.sqlite3` or `.env` on the
+server: they hold the live orders and secret key.
 
 ## Backups
 
-Everything that matters is in two places on the server: the file
-`~/FragranSoul/db.sqlite3` (perfumes, orders, accounts) and the folder
-`~/FragranSoul/media/` (photos). Download both from the **Files** tab regularly.
+Everything that matters is in one file on the server:
+`~/FragranSoul/db.sqlite3` (perfumes, orders, accounts). Download it from the
+**Files** tab regularly.
 
 ## If something goes wrong
 

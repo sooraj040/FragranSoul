@@ -157,7 +157,7 @@ def product_edit(request, pk=None):
     product = get_object_or_404(Product, pk=pk) if pk else Product()
 
     if request.method == "POST":
-        form = ProductForm(request.POST, request.FILES, instance=product)
+        form = ProductForm(request.POST, instance=product)
         formset = VariantFormSet(request.POST, instance=product)
         if form.is_valid() and formset.is_valid():
             product = form.save()
