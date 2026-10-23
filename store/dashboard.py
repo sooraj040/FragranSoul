@@ -134,7 +134,7 @@ def order(request, order_number):
 @staff_required
 def products(request):
     """Every perfume, including ones that are sold out."""
-    product_list = Product.objects.select_related("category").prefetch_related("variants")
+    product_list = Product.objects.select_related("category", "section").prefetch_related("variants")
 
     search_query = request.GET.get("q", "").strip()
     if search_query:
@@ -142,6 +142,7 @@ def products(request):
             Q(name__icontains=search_query)
             | Q(brand__icontains=search_query)
             | Q(category__name__icontains=search_query)
+            | Q(section__name__icontains=search_query)
         )
 
     return render(

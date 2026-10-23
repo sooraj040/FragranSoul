@@ -100,6 +100,13 @@ SORT_OPTIONS = {
     "name": ("Name: A to Z", "name"),
 }
 
+# Page heading and tagline for each collection tab.
+COLLECTION_HEADINGS = {
+    "men": ("Men's Perfumes", "For him · Fresh, woody, spicy and bold"),
+    "women": ("For women", ""),
+    "unisex": ("Unisex", ""),
+}
+
 
 def available_products():
     """Perfumes with at least one bottle size in stock.
@@ -112,11 +119,31 @@ def available_products():
             min_price=Min("variants__price", filter=Q(variants__stock__gt=0))
         )
         .filter(min_price__isnull=False)
-        .select_related("category")
+        .select_related("category", "section")
         .prefetch_related("variants")
         # The model's default ordering is dropped once the query aggregates.
         .order_by("-created_at")
     )
+
+
+def group_by_section(products):
+    """Split perfumes into (heading, perfumes) pairs in section order.
+
+    Perfumes without a section come last under "More perfumes". When none of
+    them has a section the list is empty and the page shows one plain grid.
+    """
+    groups = {}
+    for product in products:
+        groups.setdefault(product.section, []).append(product)
+    unsectioned = groups.pop(None, [])
+    if not groups:
+        return []
+
+    sections = sorted(groups, key=lambda section: (section.position, section.name))
+    result = [(section.name, groups[section]) for section in sections]
+    if unsectioned:
+        result.append(("More perfumes", unsectioned))
+    return result
 
 
 def home(request):
@@ -166,12 +193,17 @@ def shop(request):
         products = products.filter(gender=gender)
 
     products = products.order_by(SORT_OPTIONS[sort][1], "name")
+    heading, tagline = COLLECTION_HEADINGS.get(gender, ("All perfumes", ""))
 
     return render(
         request,
         "store/shop.html",
         {
             "products": products,
+            # The collection tabs group their perfumes under section headings.
+            "sections": group_by_section(products) if gender else [],
+            "heading": heading,
+            "tagline": tagline,
             "categories": Category.objects.all(),
             "q": search_query,
             "selected_category": category_slug,

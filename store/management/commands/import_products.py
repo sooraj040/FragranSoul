@@ -14,9 +14,10 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import Max
 from django.utils.text import slugify
 
-from store.models import Category, Product, ProductVariant
+from store.models import Category, Product, ProductVariant, Section
 
 REQUIRED_COLUMNS = {"name", "category", "volume_ml", "price"}
 TRUE_VALUES = {"1", "true", "yes", "y"}
@@ -92,6 +93,13 @@ class Command(BaseCommand):
         for column in ("is_featured", "is_new"):
             if row.get(column):
                 product_fields[column] = row[column].lower() in TRUE_VALUES
+        if row.get("section"):
+            section = Section.objects.filter(name__iexact=row["section"]).first()
+            if section is None:
+                # A new section is shown after the existing ones.
+                last = Section.objects.aggregate(Max("position"))["position__max"] or 0
+                section = Section.objects.create(name=row["section"], position=last + 1)
+            product_fields["section"] = section
 
         product, _ = Product.objects.update_or_create(
             slug=slugify(name),

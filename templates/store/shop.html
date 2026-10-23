@@ -4,7 +4,8 @@
 <section class="page-head">
     <div class="container">
         <p class="crumbs"><a href="{% url 'store:home' %}">Home</a> / Perfumes</p>
-        <h1>{% if gender == 'men' %}For men{% elif gender == 'women' %}For women{% elif gender == 'unisex' %}Unisex{% else %}All perfumes{% endif %}</h1>
+        <h1>{{ heading }}</h1>
+        {% if tagline %}<p class="lead">{{ tagline }}</p>{% endif %}
     </div>
 </section>
 
@@ -51,26 +52,44 @@
         {% endif %}
     </div>
 
-    <div class="product-grid shop-grid">
-        {% for p in products %}
-            {% include 'store/product_card.html' with product=p %}
-        {% empty %}
-            <div class="empty">
-                <div class="empty-mark" aria-hidden="true">FS</div>
-                {% if is_filtered %}
-                    <h3>No perfumes match your search.</h3>
-                    <p>Try a different note or fragrance family.</p>
-                    <a class="btn dark" href="{% url 'store:shop' %}{% if gender %}?gender={{ gender }}{% endif %}">Clear filters</a>
-                {% elif gender %}
-                    <h3>Nothing in this collection yet.</h3>
-                    <p>New perfumes are on their way.</p>
-                    <a class="btn dark" href="{% url 'store:shop' %}">View all perfumes</a>
-                {% else %}
-                    <h3>The collection is being composed.</h3>
-                    <p>Our first perfumes will be here shortly.</p>
-                {% endif %}
+    <!-- On the Men, Women and Unisex tabs the perfumes are grouped under their
+         section headings (set per perfume in the dashboard). -->
+    {% for title, items in sections %}
+        <section class="shop-section">
+            <div class="section-head">
+                <div>
+                    <p class="kicker">{{ items|length }} perfume{{ items|length|pluralize }}</p>
+                    <h2>{{ title }}</h2>
+                </div>
             </div>
-        {% endfor %}
-    </div>
+            <div class="product-grid shop-grid">
+                {% for p in items %}
+                    {% include 'store/product_card.html' with product=p %}
+                {% endfor %}
+            </div>
+        </section>
+    {% empty %}
+        <div class="product-grid shop-grid">
+            {% for p in products %}
+                {% include 'store/product_card.html' with product=p %}
+            {% empty %}
+                <div class="empty">
+                    <div class="empty-mark" aria-hidden="true">FS</div>
+                    {% if is_filtered %}
+                        <h3>No perfumes match your search.</h3>
+                        <p>Try a different note or fragrance family.</p>
+                        <a class="btn dark" href="{% url 'store:shop' %}{% if gender %}?gender={{ gender }}{% endif %}">Clear filters</a>
+                    {% elif gender %}
+                        <h3>Nothing in this collection yet.</h3>
+                        <p>New perfumes are on their way.</p>
+                        <a class="btn dark" href="{% url 'store:shop' %}">View all perfumes</a>
+                    {% else %}
+                        <h3>The collection is being composed.</h3>
+                        <p>Our first perfumes will be here shortly.</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
 </div>
 {% endblock %}

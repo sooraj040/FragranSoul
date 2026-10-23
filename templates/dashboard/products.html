@@ -7,7 +7,7 @@
 {% block content %}
 <div class="toolbar">
     <form method="get" class="search">
-        <input type="search" name="q" value="{{ q }}" placeholder="Search by name, brand or family" aria-label="Search perfumes">
+        <input type="search" name="q" value="{{ q }}" placeholder="Search by name, brand, family or section" aria-label="Search perfumes">
         <button class="btn" type="submit">Search</button>
     </form>
 </div>
@@ -17,7 +17,7 @@
         <div class="table-wrap">
             <table>
                 <thead>
-                    <tr><th>Perfume</th><th>For</th><th>Family</th><th>Sizes, price and stock</th><th>Shown as</th><th></th></tr>
+                    <tr><th>Perfume</th><th>For</th><th>Family</th><th>Section</th><th>Sizes, price and stock</th><th>Shown as</th><th></th></tr>
                 </thead>
                 <tbody>
                     {% for product in products %}
@@ -30,6 +30,7 @@
                             </td>
                             <td>{{ product.get_gender_display }}</td>
                             <td>{{ product.category.name|title }}</td>
+                            <td>{{ product.section.name|default:"—" }}</td>
                             <td>
                                 {% for variant in product.variants.all %}
                                     <span class="size-tag {% if variant.stock == 0 %}out{% endif %}">

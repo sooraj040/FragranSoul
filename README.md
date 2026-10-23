@@ -49,6 +49,7 @@ Sign in on the store with a staff account and you are taken straight to the dash
 - **Orders** — search and filter orders, open one to change its status or cancel it and return the items to stock.
 - **Perfumes** — add, edit and delete perfumes, with their bottle sizes, prices and stock. The store draws every perfume as an illustrated bottle; there are no product photos.
 - **Families** — add fragrance families. A family can only be deleted while it has no perfumes.
+- **Sections** — each perfume can be given a section such as *Designer & Niche*. On the Men, Women and Unisex pages the perfumes are grouped under their section headings; perfumes without one are listed last under *More perfumes*. Sections are created by the CSV import or in `/admin/` (**Store → Sections**), where *Position* sets their order.
 
 A staff account is created with `python manage.py createsuperuser`. The built-in Django admin is still available at `/admin/` and manages the same data.
 
@@ -73,7 +74,7 @@ No code changes are required when adding normal products.
 
 ## Adding many products at once (CSV import)
 
-Fill in `products_template.csv` with one row per bottle size. Rows with the same perfume name become one perfume with several sizes. Required columns: `name`, `category`, `volume_ml`, `price`. The `gender` column takes `men`, `women` or `unisex` (unisex when left empty).
+Fill in `products_template.csv` with one row per bottle size. Rows with the same perfume name become one perfume with several sizes. Required columns: `name`, `category`, `volume_ml`, `price`. The `gender` column takes `men`, `women` or `unisex` (unisex when left empty). The optional `section` column names the heading the perfume is grouped under; a new section is created the first time it appears.
 
 ```powershell
 python manage.py import_products products_template.csv --dry-run
